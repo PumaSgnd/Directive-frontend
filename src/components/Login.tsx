@@ -40,7 +40,7 @@ export default function Login() {
     return (
         <Box sx={{ minHeight: "100vh", backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", px: 91, py: 0 }}>
             <Helmet>
-                <title>Sign in | Directive</title>
+                <title>Sign in | Turnament Pencak Silat</title>
             </Helmet>
 
             <Box onClick={handleLogoClick} sx={{ mb: 3, cursor: "pointer" }}>

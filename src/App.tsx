@@ -4,7 +4,7 @@ import ResetPassword from "./components/ResetPassword";
 import Register from "./components/Register";
 import LoginGuard from "./components/guards/LoginGuard";
 import Dashboard from "./components/Dashboard";
-import Discipline from './components/datamaster/discipline/discipline';
+import Discipline from './components/datamaster/discipline/Discipline';
 import CreateDiscipline from "./components/datamaster/discipline/CreateDisciplineModal";
 import EditDiscipline from './components/datamaster/discipline/EditDisciplineModal';
 import BlankPage from "./pages/BlankPage";

@@ -15,7 +15,7 @@ export const useStore = create<AppState>()(
         (set) => ({
             sidebarOpen: true,
             toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-            pageTitle: "Directive",
+            pageTitle: "Turnament Pencak Silat",
             setPageTitle: (title: string) => set({ pageTitle: title }),
             user: null,
             setUser: (user: any) => set({ user }),
