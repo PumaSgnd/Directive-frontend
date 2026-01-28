@@ -41,11 +41,12 @@ const Sidebar: React.FC = () => {
         children: [
           { text: "PIC", path: "/datamaster/pic" },
           {
-            text: "Discipline",
+            text: "Turnamen",
             children: [
-              { text: "Discipline", path: "/datamaster/discipline/discipline" },
-              { text: "Category Discipline", path: "/datamaster/category-discipline" },
-              { text: "Sub-Category Discipline", path: "/datamaster/sub-category-discipline" }
+              { text: "Babak penyisihan", path: "/datamaster/discipline/discipline" },
+              { text: "8 besar(perempat)", path: "/datamaster/category-discipline" },
+              { text: "Semi final", path: "/datamaster/sub-category-discipline" },
+              { text: "Final", path: "/datamaster/sub-category-discipline" }
             ]
           },
           { text: "Email Receive", path: "/data-master/email-receive" },
@@ -53,7 +54,13 @@ const Sidebar: React.FC = () => {
           { text: "Signature", path: "/data-master/signature" }
         ]
       },
-      { text: "Competition", icon: <Assignment />, path: "/competition" },
+      {
+        text: "Hitung Turnamen",
+        children: [
+          { text: "Controller", path: "/datamaster/discipline/discipline" },
+          { text: "History", path: "/datamaster/category-discipline" }
+        ]
+      },
       { text: "Accommodation", icon: <Hotel />, path: "/accommodation" },
       { text: "Directive", icon: <Description />, path: "/directive" },
       { text: "Registration", icon: <Assignment />, path: "/registration" },
