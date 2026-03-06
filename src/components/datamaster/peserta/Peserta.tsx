@@ -15,50 +15,76 @@ import {
     CircularProgress,
     Tooltip,
     Divider,
-    MenuItem,
-    TextField
+    TextField,
+    MenuItem
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import { TablePagination } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
-import DeletePICDialog from "./DeletePICDialog";
+import DeletePesertaDialog from "./DeletePesertaDialog";
 import { useStore } from "../../../hooks/useStore";
-import { usePICStore } from "../../../stores/PICStore";
-import { usePIC } from "../../../hooks/usePIC";
+import { usePesertaStore } from "../../../stores/PesertaStore";
+import { usePeserta } from "../../../hooks/usePeserta";
 import PaginationActions from "../../custom/PaginationActions";
 
-export default function PIC() {
+export default function Peserta() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
-    const { pic, loading, selectedPIC, setSelectedPIC } = usePICStore();
-    const { loadPIC, removePIC } = usePIC();
+    const { Peserta, loading, selectedPeserta, setSelectedPeserta } = usePesertaStore();
+    const { loadPeserta, removePeserta } = usePeserta();
     const drawerWidth = sidebarOpen ? 260 : 70;
     const [openDelete, setOpenDelete] = useState(false);
     const [search, setSearch] = useState("");
-    const [sortBy, setSortBy] = useState<"default" | "no" | "name">("default");
+    const [sortBy, setSortBy] = useState<"default" | "no" | "name" | "regional">("default");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        }
+    };
 
     useEffect(() => {
-        loadPIC();
-        setPageTitle("PIC");
+        const handleChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener("fullscreenchange", handleChange);
+
+        return () => {
+            document.removeEventListener("fullscreenchange", handleChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        loadPeserta();
+        setPageTitle("Peserta");
     }, []);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
     }, [pageTitle]);
 
-    const memoizedPIC = useMemo(
-        () => Array.isArray(pic) ? pic : [],
-        [pic]
+    const memoizedPeserta = useMemo(
+        () => Array.isArray(Peserta) ? Peserta : [],
+        [Peserta]
     );
 
-    const filteredPIC = useMemo(() => {
-        let data = [...memoizedPIC];
+    const filteredPeserta = useMemo(() => {
+        let data = [...memoizedPeserta];
 
         if (search) {
             data = data.filter((item) =>
@@ -81,29 +107,47 @@ export default function PIC() {
             });
         }
 
+        if (sortBy === "regional") {
+            data.sort((a, b) => {
+                if (sortOrder === "asc") {
+                    return a.regional.localeCompare(b.regional);
+                }
+                return b.regional.localeCompare(a.regional);
+            });
+        }
+
         if (sortBy === "default") {
             return data;
         }
 
         return data;
-    }, [memoizedPIC, search, sortBy, sortOrder]);
+    }, [memoizedPeserta, search, sortBy, sortOrder]);
 
-    const paginatedPIC = useMemo(() => {
+    const paginatedPeserta = useMemo(() => {
         const start = page * rowsPerPage;
-        return filteredPIC.slice(start, start + rowsPerPage);
-    }, [filteredPIC, page, rowsPerPage]);
+        return filteredPeserta.slice(start, start + rowsPerPage);
+    }, [filteredPeserta, page, rowsPerPage]);
 
     useEffect(() => {
         setPage(0);
     }, [search, sortBy, sortOrder]);
-    
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" mt={10}>
-                <CircularProgress role="progressbar" aria-label="Loading PIC..." />
+                <CircularProgress role="progressbar" aria-label="Loading Peserta..." />
             </Box>
         );
     }
+
+    const formatText = (text: string) => {
+        if (!text) return "";
+
+        return text
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
 
     return (
         <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
@@ -123,8 +167,12 @@ export default function PIC() {
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                         <Tooltip title="Fullscreen">
-                            <IconButton size="medium" aria-label="Toggle fullscreen view">
-                                <FullscreenIcon fontSize="medium" />
+                            <IconButton size="medium" aria-label="Toggle fullscreen view" onClick={toggleFullscreen}>
+                                {isFullscreen ? (
+                                    <FullscreenExitIcon fontSize="medium" />
+                                ) : (
+                                    <FullscreenIcon fontSize="medium" />
+                                )}
                             </IconButton>
                         </Tooltip>
                         <UserMenu />
@@ -156,6 +204,7 @@ export default function PIC() {
                         <MenuItem value="default">Filter</MenuItem>
                         <MenuItem value="no">No</MenuItem>
                         <MenuItem value="name">Name</MenuItem>
+                        <MenuItem value="regional">Regional</MenuItem>
                     </TextField>
                     <TextField
                         placeholder="Search..."
@@ -168,34 +217,36 @@ export default function PIC() {
                 <Card sx={{ mt: 5 }}>
                     <CardContent>
                         <TableContainer>
-                            <Table aria-label="PIC List Table">
+                            <Table aria-label="Peserta List Table">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>No</TableCell>
                                         <TableCell>Name</TableCell>
+                                        <TableCell>Regional</TableCell>
                                         <TableCell>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {paginatedPIC.map((pic, index) => (
-                                        <TableRow key={pic.id}>
+                                    {paginatedPeserta.map((Peserta, index) => (
+                                        <TableRow key={Peserta.id}>
                                             <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                                            <TableCell>{pic.name}</TableCell>
+                                            <TableCell>{formatText(Peserta.name)}</TableCell>
+                                            <TableCell>{formatText(Peserta.regional)}</TableCell>
                                             <TableCell>
                                                 <IconButton
                                                     color="primary"
                                                     size="small"
-                                                    aria-label={`Edit ${pic.name}`}
-                                                    onClick={() => navigate(`/datamaster/pic/edit/${pic.id}`)}
+                                                    aria-label={`Edit ${Peserta.name}`}
+                                                    onClick={() => navigate(`/datamaster/peserta/edit/${Peserta.id}`)}
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
                                                 <IconButton
                                                     color="error"
                                                     size="small"
-                                                    aria-label={`Delete ${pic.name}`}
+                                                    aria-label={`Delete ${Peserta.name}`}
                                                     onClick={() => {
-                                                        setSelectedPIC(pic);
+                                                        setSelectedPeserta(Peserta);
                                                         setOpenDelete(true);
                                                     }}
                                                 >
@@ -217,7 +268,7 @@ export default function PIC() {
                         >
                             <TablePagination
                                 component="div"
-                                count={filteredPIC.length}
+                                count={filteredPeserta.length}
                                 page={page}
                                 onPageChange={(event, newPage) => setPage(newPage)}
                                 rowsPerPage={rowsPerPage}
@@ -240,23 +291,23 @@ export default function PIC() {
                                 variant="contained"
                                 color="error"
                                 startIcon={<Add />}
-                                onClick={() => navigate("/datamaster/pic/create-pic")}
-                                aria-label="Create New PIC"
+                                onClick={() => navigate("/datamaster/peserta/create-peserta")}
+                                aria-label="Create New Peserta"
                             >
                                 Create
                             </Button>
                         </Box>
                     </CardContent>
                 </Card>
-                {selectedPIC && (
-                    <DeletePICDialog
+                {selectedPeserta && (
+                    <DeletePesertaDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
                         onConfirm={() => {
-                            removePIC(selectedPIC.id);
+                            removePeserta(selectedPeserta.id);
                             setOpenDelete(false);
                         }}
-                        PICName={selectedPIC.name}
+                        PesertaName={selectedPeserta.name}
                     />
                 )}
             </Box>

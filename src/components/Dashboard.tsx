@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
+import { useEffect, useState } from "react";
 import { Box, Typography, IconButton, Tooltip, Divider } from "@mui/material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import TopCard from "../components/card/TopCard";
@@ -77,16 +78,20 @@ const data: {
 };
 
 const Dashboard: React.FC = () => {
-    const { sidebarOpen, pageTitle } = useStore();
+    const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const [competition, setCompetition] = useState("April");
-    const drawerWidth = sidebarOpen ? 240 : 70;
+    const drawerWidth = sidebarOpen ? 260 : 70;
 
     useEffect(() => {
-        document.title = `${pageTitle}`;
+        setPageTitle("Dashboard");
+    }, []);
+
+    useEffect(() => {
+        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
     }, [pageTitle]);
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "row", height: "100vh", width: "100vw", overflowX: "hidden" }}>
+        <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
             <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
                 <Sidebar />
             </Box>
@@ -95,7 +100,7 @@ const Dashboard: React.FC = () => {
                     flexGrow: 1,
                     transition: "margin-left 0.3s",
                     ml: `${drawerWidth}px`,
-                    padding: 5,
+                    padding: 3,
                     fontFamily: "Roboto, sans-serif",
                     background: "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
                     color: "black",

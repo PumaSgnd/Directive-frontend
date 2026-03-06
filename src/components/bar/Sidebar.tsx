@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Drawer,
   List,
@@ -11,23 +11,31 @@ import {
 } from "@mui/material";
 import {
   Dashboard,
-  Assignment,
   Group,
-  Hotel,
-  ExitToApp,
-  Description,
   ExpandLess,
-  ExpandMore
+  ExpandMore,
+  Calculate,
+  Person,
+  Groups,
+  Gavel,
+  EmojiEvents,
+  SportsScore,
+  MilitaryTech,
+  History,
+  ManageAccounts
 } from "@mui/icons-material";
 import directiveLogo from "../../assets/direc.png";
 import Logo from "../../assets/logo.png";
+import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../../hooks/useStore";
+import * as React from "react";
 
-const drawerWidthOpen = 240;
+const drawerWidthOpen = 260;
 const drawerWidthClose = 70;
 
 const Sidebar: React.FC = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { sidebarOpen, toggleSidebar, setPageTitle } = useStore();
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
@@ -39,33 +47,31 @@ const Sidebar: React.FC = () => {
         text: "Data Master",
         icon: <Group />,
         children: [
-          { text: "PIC", path: "/datamaster/pic" },
-          {
-            text: "Turnamen",
-            children: [
-              { text: "Babak penyisihan", path: "/datamaster/discipline/discipline" },
-              { text: "8 besar(perempat)", path: "/datamaster/category-discipline" },
-              { text: "Semi final", path: "/datamaster/sub-category-discipline" },
-              { text: "Final", path: "/datamaster/sub-category-discipline" }
-            ]
-          },
-          { text: "Email Receive", path: "/data-master/email-receive" },
-          { text: "Hotel", path: "/data-master/hotel" },
-          { text: "Signature", path: "/data-master/signature" }
+          { text: "User Management", icon: <ManageAccounts />, path: "/datamaster/usermanagement" },
+          { text: "PIC", icon: <Person />, path: "/datamaster/pic" },
+          { text: "Peserta", icon: <Groups />, path: "/datamaster/peserta" },
+          { text: "Juri", icon: <Gavel />, path: "/datamaster/juri" },
+        ]
+      },
+      {
+        text: "Turnamen",
+        icon: <EmojiEvents />,
+        children: [
+          { text: "Babak penyisihan", icon: <SportsScore />, path: "/datamaster/discipline/discipline" },
+          { text: "8 besar(perempat)", icon: <MilitaryTech />, path: "/datamaster/category-discipline" },
+          { text: "Semi final", icon: <MilitaryTech />, path: "/datamaster/sub-category-discipline" },
+          { text: "Final", icon: <EmojiEvents />, path: "/datamaster/sub-category-discipline" }
         ]
       },
       {
         text: "Hitung Turnamen",
+        icon: <Calculate />,
         children: [
-          { text: "Controller", path: "/datamaster/discipline/discipline" },
-          { text: "History", path: "/datamaster/category-discipline" }
+          { text: "Controller", icon: <Calculate />, path: "/datamaster/discipline/discipline" },
+          { text: "Skor", icon: <SportsScore />, path: "/datamaster/discipline/discipline" },
+          { text: "History", icon: <History />, path: "/datamaster/category-discipline" }
         ]
-      },
-      { text: "Accommodation", icon: <Hotel />, path: "/accommodation" },
-      { text: "Directive", icon: <Description />, path: "/directive" },
-      { text: "Registration", icon: <Assignment />, path: "/registration" },
-      { text: "Apply Accommodation", icon: <Hotel />, path: "/apply-accommodation" },
-      { text: "Report", icon: <ExitToApp />, path: "/report" }
+      }
     ],
     []
   );
@@ -82,27 +88,54 @@ const Sidebar: React.FC = () => {
     }));
   };
 
+  useEffect(() => {
+    menuItems.forEach(menu => {
+      if (menu.children) {
+        menu.children.forEach(child => {
+          if (location.pathname.startsWith(child.path)) {
+            setOpenMenus(prev => ({
+              ...prev,
+              [menu.text]: true
+            }));
+          }
+        });
+      }
+    });
+  }, [location.pathname]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderMenuItems = (items: any[], level = 0) =>
     items.map((item, index) => {
+      const isActive =
+        item.path && location.pathname.startsWith(item.path);
       const hasChildren = item.children && item.children.length > 0;
       const isOpen = openMenus[item.text] || false;
 
       return (
         <React.Fragment key={`${item.text}-${index}`}>
           <ListItemButton
+            selected={isActive}
             onClick={() =>
               hasChildren
                 ? handleToggleMenu(item.text)
                 : handleMenuItemClick(item.path, item.text)
             }
-            sx={{ pl: 2 + level * 2 }}
+            sx={{ pl: 2 + level * 2, py: sidebarOpen ? 2 : 2.5, justifyContent: sidebarOpen ? "flex-start" : "center", }}
             role="menuitem"
           >
-            {item.icon && level === 0 && (
+            {item.icon && (
               <ListItemIcon
-                sx={{ minWidth: 0, mr: sidebarOpen ? 2 : "auto", justifyContent: "center" }}
+                sx={{
+                  minWidth: 0,
+                  mr: sidebarOpen ? 2 : "auto",
+                  justifyContent: "center",
+                  width: sidebarOpen ? "auto" : "100%",
+                  color: level === 0 ? "inherit" : "text.secondary"
+                }}
               >
-                {item.icon}
+                {React.cloneElement(item.icon, {
+                  fontSize: level === 0 ? "medium" : "small"
+                })}
               </ListItemIcon>
             )}
             {sidebarOpen && <ListItemText primary={item.text} />}

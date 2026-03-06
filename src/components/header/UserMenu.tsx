@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import * as React from "react";
+import { useState } from "react";
 import {
   Avatar, Box, Typography, Menu, MenuItem, ListItemIcon, Dialog,
   DialogTitle, DialogContent, DialogContentText, DialogActions, Button
@@ -42,7 +43,7 @@ const UserMenu: React.FC = () => {
             {user ? capitalizeWords(user.full_name || "Unknown User") : "Unknown User"}
           </Typography>
           <Typography fontSize={12} color="gray">
-            Super Admin
+            {user? capitalizeWords(user.role || "Unknown Role") : "Unknown Role"}
           </Typography>
         </Box>
       </Box>

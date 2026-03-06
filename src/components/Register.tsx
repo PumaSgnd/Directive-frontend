@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import * as React from "react";
+import { useState } from "react";
 import {
     Box,
     Button,
@@ -50,7 +51,12 @@ export default function RegisterPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+
+        if (name === "username" || name === "email") {
+            setFormData({ ...formData, [name]: value.toLowerCase() });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const validatePassword = (password: string) => {
@@ -96,6 +102,7 @@ export default function RegisterPage() {
         }
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { confirmPassword, ...dataToSend } = formData;
             const response = await axios.post("http://localhost:5000/api/register", dataToSend);
 

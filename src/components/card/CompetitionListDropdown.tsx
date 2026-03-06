@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Paper, Select, MenuItem, Typography, SelectChangeEvent } from "@mui/material";
 
 interface CompetitionListDropdownProps {

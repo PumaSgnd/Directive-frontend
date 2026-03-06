@@ -15,8 +15,8 @@ import {
     CircularProgress,
     Tooltip,
     Divider,
-    MenuItem,
-    TextField
+    TextField,
+    MenuItem
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
@@ -24,17 +24,17 @@ import { TablePagination } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
-import DeletePICDialog from "./DeletePICDialog";
+import DeleteJuriDialog from "./DeleteJuriDialog";
 import { useStore } from "../../../hooks/useStore";
-import { usePICStore } from "../../../stores/PICStore";
-import { usePIC } from "../../../hooks/usePIC";
+import { useJuriStore } from "../../../stores/JuriStore";
+import { useJuri } from "../../../hooks/useJuri";
 import PaginationActions from "../../custom/PaginationActions";
 
-export default function PIC() {
+export default function Juri() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
-    const { pic, loading, selectedPIC, setSelectedPIC } = usePICStore();
-    const { loadPIC, removePIC } = usePIC();
+    const { Juri, loading, selectedJuri, setSelectedJuri } = useJuriStore();
+    const { loadJuri, removeJuri } = useJuri();
     const drawerWidth = sidebarOpen ? 260 : 70;
     const [openDelete, setOpenDelete] = useState(false);
     const [search, setSearch] = useState("");
@@ -44,21 +44,21 @@ export default function PIC() {
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
     useEffect(() => {
-        loadPIC();
-        setPageTitle("PIC");
+        loadJuri();
+        setPageTitle("Juri");
     }, []);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
     }, [pageTitle]);
 
-    const memoizedPIC = useMemo(
-        () => Array.isArray(pic) ? pic : [],
-        [pic]
+    const memoizedJuri = useMemo(
+        () => Array.isArray(Juri) ? Juri : [],
+        [Juri]
     );
 
-    const filteredPIC = useMemo(() => {
-        let data = [...memoizedPIC];
+    const filteredJuri = useMemo(() => {
+        let data = [...memoizedJuri];
 
         if (search) {
             data = data.filter((item) =>
@@ -86,12 +86,12 @@ export default function PIC() {
         }
 
         return data;
-    }, [memoizedPIC, search, sortBy, sortOrder]);
+    }, [memoizedJuri, search, sortBy, sortOrder]);
 
-    const paginatedPIC = useMemo(() => {
+    const paginatedJuri = useMemo(() => {
         const start = page * rowsPerPage;
-        return filteredPIC.slice(start, start + rowsPerPage);
-    }, [filteredPIC, page, rowsPerPage]);
+        return filteredJuri.slice(start, start + rowsPerPage);
+    }, [filteredJuri, page, rowsPerPage]);
 
     useEffect(() => {
         setPage(0);
@@ -100,7 +100,7 @@ export default function PIC() {
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" mt={10}>
-                <CircularProgress role="progressbar" aria-label="Loading PIC..." />
+                <CircularProgress role="progressbar" aria-label="Loading Juri..." />
             </Box>
         );
     }
@@ -168,7 +168,7 @@ export default function PIC() {
                 <Card sx={{ mt: 5 }}>
                     <CardContent>
                         <TableContainer>
-                            <Table aria-label="PIC List Table">
+                            <Table aria-label="Juri List Table">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>No</TableCell>
@@ -177,25 +177,26 @@ export default function PIC() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {paginatedPIC.map((pic, index) => (
-                                        <TableRow key={pic.id}>
+                                    {paginatedJuri.map((Juri, index) => (
+                                        <TableRow key={Juri.id}>
                                             <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                                            <TableCell>{pic.name}</TableCell>
+                                            {/* <TableCell>{index + 1}</TableCell> */}
+                                            <TableCell>{Juri.name}</TableCell>
                                             <TableCell>
                                                 <IconButton
                                                     color="primary"
                                                     size="small"
-                                                    aria-label={`Edit ${pic.name}`}
-                                                    onClick={() => navigate(`/datamaster/pic/edit/${pic.id}`)}
+                                                    aria-label={`Edit ${Juri.name}`}
+                                                    onClick={() => navigate(`/datamaster/juri/edit/${Juri.id}`)}
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
                                                 <IconButton
                                                     color="error"
                                                     size="small"
-                                                    aria-label={`Delete ${pic.name}`}
+                                                    aria-label={`Delete ${Juri.name}`}
                                                     onClick={() => {
-                                                        setSelectedPIC(pic);
+                                                        setSelectedJuri(Juri);
                                                         setOpenDelete(true);
                                                     }}
                                                 >
@@ -217,7 +218,7 @@ export default function PIC() {
                         >
                             <TablePagination
                                 component="div"
-                                count={filteredPIC.length}
+                                count={filteredJuri.length}
                                 page={page}
                                 onPageChange={(event, newPage) => setPage(newPage)}
                                 rowsPerPage={rowsPerPage}
@@ -240,23 +241,34 @@ export default function PIC() {
                                 variant="contained"
                                 color="error"
                                 startIcon={<Add />}
-                                onClick={() => navigate("/datamaster/pic/create-pic")}
-                                aria-label="Create New PIC"
+                                onClick={() => navigate("/datamaster/juri/create-juri")}
+                                aria-label="Create New Juri"
                             >
                                 Create
                             </Button>
                         </Box>
+                        {/* <Box display="flex" justifyContent="flex-end" mt={5} mb={2}>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<Add />}
+                                onClick={() => navigate("/datamaster/juri/create-juri")}
+                                aria-label="Create New Juri"
+                            >
+                                Create
+                            </Button>
+                        </Box> */}
                     </CardContent>
                 </Card>
-                {selectedPIC && (
-                    <DeletePICDialog
+                {selectedJuri && (
+                    <DeleteJuriDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
                         onConfirm={() => {
-                            removePIC(selectedPIC.id);
+                            removeJuri(selectedJuri.id);
                             setOpenDelete(false);
                         }}
-                        PICName={selectedPIC.name}
+                        JuriName={selectedJuri.name}
                     />
                 )}
             </Box>

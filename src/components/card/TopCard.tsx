@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Box, Paper, Typography } from "@mui/material";
 
 interface TopCardProps {
@@ -19,7 +19,9 @@ const Ribbon = ({ children }: { children: React.ReactNode }) => (
       py: 0.25,
       borderRadius: "0 4px 4px 0",
       display: "inline-block",
-      whiteSpace: "nowrap",
+      wordBreak: "normal",
+      overflowWrap: "break-word",
+      maxWidth: "100%",
       "&::before": {
         content: '""',
         position: "absolute",

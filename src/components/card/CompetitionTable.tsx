@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 
 interface CompetitionTableProps {
@@ -34,6 +34,11 @@ const CompetitionTable: React.FC<CompetitionTableProps> = ({ competitionTable })
             <TableCell
               sx={{ fontSize: 15, border: 1, borderColor: "divider" }}
             >
+              Name
+            </TableCell>
+            <TableCell
+              sx={{ fontSize: 15, border: 1, borderColor: "divider" }}
+            >
               Pic
             </TableCell>
           </TableRow>
@@ -43,6 +48,9 @@ const CompetitionTable: React.FC<CompetitionTableProps> = ({ competitionTable })
             <TableRow key={no}>
               <TableCell sx={{ fontSize: 15, border: 1, borderColor: "divider" }}>
                 {no}
+              </TableCell>
+              <TableCell sx={{ fontSize: 15, border: 1, borderColor: "divider" }}>
+                {name}
               </TableCell>
               <TableCell sx={{ fontSize: 15, border: 1, borderColor: "divider" }}>
                 {name}
