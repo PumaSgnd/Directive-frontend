@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import { TablePagination } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../bar/Sidebar";
@@ -42,6 +43,31 @@ export default function PIC() {
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        }
+    };
+
+    useEffect(() => {
+        const handleChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener("fullscreenchange", handleChange);
+
+        return () => {
+            document.removeEventListener("fullscreenchange", handleChange);
+        };
+    }, []);
 
     useEffect(() => {
         loadPIC();
@@ -123,8 +149,12 @@ export default function PIC() {
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
                         <Tooltip title="Fullscreen">
-                            <IconButton size="medium" aria-label="Toggle fullscreen view">
-                                <FullscreenIcon fontSize="medium" />
+                            <IconButton size="medium" aria-label="Toggle fullscreen view" onClick={toggleFullscreen}>
+                                {isFullscreen ? (
+                                    <FullscreenExitIcon fontSize="medium" />
+                                ) : (
+                                    <FullscreenIcon fontSize="medium" />
+                                )}
                             </IconButton>
                         </Tooltip>
                         <UserMenu />
