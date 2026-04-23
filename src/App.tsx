@@ -17,6 +17,7 @@ import EditJuri from './components/datamaster/Juri/EditJuriModal';
 import UserManagement from './components/datamaster/usermanagement/UserManagement';
 import CreateUser from './components/datamaster/usermanagement/CreateUserModal';
 import EditUser from './components/datamaster/usermanagement/EditUserModal';
+import HitungTurnamen from './components/hitungTurnamen/Controller';
 
 function App() {
   return (
@@ -49,6 +50,9 @@ function App() {
         <Route path="/datamaster/pic" element={<PIC />} />
         <Route path="/datamaster/pic/create-pic" element={<CreatePIC />} />
         <Route path="/datamaster/pic/edit/:id" element={<EditPIC />} />
+
+        {/* hitungTurnamen */}
+        <Route path="/hitungTurnamen/controller" element={<HitungTurnamen />} />
 
         {/* menu sedang proses */}
         <Route path="/datamaster/category-discipline" element={<BlankPage />} />

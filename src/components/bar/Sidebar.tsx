@@ -67,7 +67,7 @@ const Sidebar: React.FC = () => {
         text: "Hitung Turnamen",
         icon: <Calculate />,
         children: [
-          { text: "Controller", icon: <Calculate />, path: "/datamaster/discipline/discipline" },
+          { text: "Controller", icon: <Calculate />, path: "/hitungTurnamen/controller" },
           { text: "Skor", icon: <SportsScore />, path: "/datamaster/discipline/discipline" },
           { text: "History", icon: <History />, path: "/datamaster/category-discipline" }
         ]
