@@ -91,6 +91,14 @@ i18n
           cancel: "Cancel",
           account: "Account",
 
+          // SCORE
+          tournamentTitle: "PENCAK SILAT TOURNAMENT",
+          scoreboardTitle: "SCORE BOARD",
+          exitFullscreen: "Exit Fullscreen",
+          scorePerJudge: "Score Per Judge",
+          noJudgeAssigned: "No judges assigned.",
+          pause: "Paused",
+
           // SIDEBAR
           dashboard: "Dashboard",
           dataMaster: "Data Master",
@@ -188,6 +196,13 @@ i18n
           confirmQuestion: "Apakah kamu yakin ingin keluar?",
           cancel: "Batal",
           account: "Akun",
+
+          // SCORE
+          tournamentTitle: "TURNAMEN PENCAK SILAT",
+          scoreboardTitle: "SCORE BOARD",
+          exitFullscreen: "Keluar Layar Penuh",
+          scorePerJudge: "Perolehan Skor Juri",
+          noJudgeAssigned: "Belum ada juri yang ditunjuk.",
 
           // SIDEBAR
           dashboard: "Dashboard",

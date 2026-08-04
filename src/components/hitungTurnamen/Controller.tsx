@@ -367,25 +367,43 @@ export default function HitungTurnamen() {
                     </Box>
                 </Box>
                 <Divider />
-
                 {!hasMatch ? (
-                    <Card sx={{ mt: 5, flexGrow: 1 }}>
-                        <CardContent>
+                    <Card
+                        sx={{
+                            mt: 5,
+                            flexGrow: 1,
+                            display: "flex",
+                        }}
+                    >
+                        <CardContent
+                            sx={{
+                                flexGrow: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
                             <Box
                                 display="flex"
                                 flexDirection="column"
                                 alignItems="center"
                                 justifyContent="center"
                                 gap={2}
-                                py={8}
+                                textAlign="center"
+                                maxWidth={500}
                             >
                                 <Typography variant="h6" color="text.secondary">
                                     Belum ada pertandingan yang dipilih
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" textAlign="center">
+
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                >
                                     Buka halaman Data Pertandingan, lalu pilih salah satu
                                     pertandingan untuk mulai menghitung skor.
                                 </Typography>
+
                                 <Button
                                     variant="contained"
                                     color="primary"

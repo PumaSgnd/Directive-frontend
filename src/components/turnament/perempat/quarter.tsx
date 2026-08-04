@@ -17,7 +17,8 @@ import {
     Divider,
     TextField,
     MenuItem,
-    TablePagination
+    TablePagination,
+    Chip,
 } from "@mui/material";
 
 import { Add, Edit, Delete } from "@mui/icons-material";
@@ -28,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import DeletePesertaDialog from "./DeleteQuarterDialog";
+import PertandinganDetailDialog from "./PertandinganDetailDialog";
 
 import { useStore } from "../../../hooks/useStore";
 import { usePertandinganStore } from "../../../stores/pertandinganStore";
@@ -46,12 +48,20 @@ export default function Quarter() {
         setSelectedPertandingan,
     } = usePertandinganStore();
 
-    const { reload, loading, deletePertandingan } = usePertandingan("perempat_final");
+    const { loading, removePertandingan } = usePertandingan("perempat_final");
 
     const drawerWidth = sidebarOpen ? 260 : 70;
     const { t } = useTranslation();
 
     const [openDelete, setOpenDelete] = useState(false);
+
+    // ===== DETAIL DIALOG =====
+    // dipisah dari selectedPertandingan (yang dipakai untuk delete)
+    // supaya klik row untuk lihat detail tidak bentrok state-nya
+    // dengan alur hapus.
+    const [detailId, setDetailId] = useState<number | null>(null);
+    const [openDetail, setOpenDetail] = useState(false);
+
     const [search, setSearch] = useState("");
     const [sortBy, setSortBy] = useState<"default" | "no" | "name">("default");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -79,7 +89,7 @@ export default function Quarter() {
     }, []);
 
     useEffect(() => {
-        setPageTitle(t("perempat"));
+        setPageTitle(t("perempat_final"));
     }, [setPageTitle, t]);
 
     useEffect(() => {
@@ -98,9 +108,11 @@ export default function Quarter() {
         let data = [...(pertandingan || [])];
 
         if (search) {
+            const q = search.toLowerCase();
             data = data.filter((item) =>
-                item.peserta1_name.toLowerCase().includes(search.toLowerCase()) ||
-                item.peserta2_name.toLowerCase().includes(search.toLowerCase())
+                item.peserta1_name?.toLowerCase().includes(q) ||
+                // peserta2_name bisa null untuk pertandingan BYE
+                (item.peserta2_name ?? "").toLowerCase().includes(q)
             );
         }
 
@@ -112,8 +124,8 @@ export default function Quarter() {
 
         if (sortBy === "name") {
             data.sort((a, b) => {
-                const nameA = `${a.peserta1_name} ${a.peserta2_name}`;
-                const nameB = `${b.peserta1_name} ${b.peserta2_name}`;
+                const nameA = `${a.peserta1_name} ${a.peserta2_name ?? ""}`;
+                const nameB = `${b.peserta1_name} ${b.peserta2_name ?? ""}`;
 
                 return sortOrder === "asc"
                     ? nameA.localeCompare(nameB)
@@ -128,6 +140,46 @@ export default function Quarter() {
         const start = page * rowsPerPage;
         return filteredMatches.slice(start, start + rowsPerPage);
     }, [filteredMatches, page, rowsPerPage]);
+
+    const handleOpenDetail = (id: number) => {
+        setDetailId(id);
+        setOpenDetail(true);
+    };
+
+    const handleCloseDetail = () => {
+        setOpenDetail(false);
+        setDetailId(null);
+    };
+
+    const getStatusText = (status?: string) => {
+        switch (status) {
+            case "belum_mulai":
+                return t("belum_mulai");
+            case "berlangsung":
+                return t("berlangsung");
+            case "pause":
+                return t("pause");
+            case "selesai":
+                return t("selesai");
+            default:
+                return t("semua");
+        }
+    };
+
+    const getStatusColor = (
+        status?: string
+    ): "default" | "warning" | "success" | "info" => {
+        switch (status) {
+            case "berlangsung":
+                return "warning";
+            case "pause":
+                return "info";
+            case "selesai":
+                return "success";
+            default:
+                return "default";
+        }
+    };
 
     if (loading) {
         return (
@@ -212,7 +264,12 @@ export default function Quarter() {
 
                                 <TableBody>
                                     {paginatedMatches.map((match, index) => (
-                                        <TableRow key={match.id}>
+                                        <TableRow
+                                            key={match.id}
+                                            hover
+                                            onClick={() => handleOpenDetail(match.id)}
+                                            sx={{ cursor: "pointer" }}
+                                        >
                                             <TableCell align="center">
                                                 {page * rowsPerPage + index + 1}
                                             </TableCell>
@@ -226,44 +283,42 @@ export default function Quarter() {
                                                             fontWeight: 700,
                                                             color: "error.main",
                                                             fontSize: 12,
+                                                            mt: 0.2,
                                                         }}
                                                     >
                                                         {t("vs")}
                                                     </Typography>
 
-                                                    {formatText(match.peserta2_name)}
+                                                    {match.peserta2_name
+                                                        ? formatText(match.peserta2_name)
+                                                        : t("bye")}
                                                 </Box>
                                             </TableCell>
 
                                             <TableCell align="center">
-                                                <Typography
-                                                    sx={{
-                                                        fontWeight: 600,
-                                                        color:
-                                                            match.status === "belum_mulai"
-                                                                ? "text.secondary"
-                                                                : match.status === "berlangsung"
-                                                                    ? "warning.main"
-                                                                    : "success.main",
-                                                    }}
-                                                >
-                                                    {formatText(t(match.status))}
-                                                </Typography>
+                                                <Chip
+                                                    label={getStatusText(match.status)}
+                                                    color={getStatusColor(match.status)}
+                                                    size="medium"
+                                                />
                                             </TableCell>
 
                                             <TableCell align="center">
                                                 <IconButton
                                                     color="primary"
-                                                    onClick={() =>
-                                                        navigate(`/pertandingan/edit/${match.id}`)
-                                                    }
+                                                    onClick={(e) => {
+                                                        // cegah klik tombol ikut membuka dialog detail
+                                                        e.stopPropagation();
+                                                        navigate(`/pertandingan/edit/${match.id}`);
+                                                    }}
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
 
                                                 <IconButton
                                                     color="error"
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setSelectedPertandingan(match);
                                                         setOpenDelete(true);
                                                     }}
@@ -283,13 +338,21 @@ export default function Quarter() {
                                 component="div"
                                 count={filteredMatches.length}
                                 page={page}
-                                onPageChange={(_e, newPage) => setPage(newPage)}
+                                onPageChange={(event, newPage) => setPage(newPage)}
                                 rowsPerPage={rowsPerPage}
-                                onRowsPerPageChange={(e) => {
-                                    setRowsPerPage(parseInt(e.target.value, 10));
+                                onRowsPerPageChange={(event) => {
+                                    setRowsPerPage(parseInt(event.target.value, 10));
                                     setPage(0);
                                 }}
+                                rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                                labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+                                labelRowsPerPage={t("rows")}
                                 ActionsComponent={PaginationActions}
+                                sx={{
+                                    "& .MuiTablePagination-select": {
+                                        border: "1px solid #ccc",
+                                    }
+                                }}
                             />
 
                             <Button
@@ -303,19 +366,27 @@ export default function Quarter() {
                         </Box>
                     </CardContent>
                 </Card>
+
                 {selectedPertandingan && (
                     <DeletePesertaDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
                         onConfirm={async () => {
-                            await deletePertandingan(selectedPertandingan.id);
-                            await reload();
+                            // removePertandingan sudah reload data secara internal,
+                            // jadi tidak perlu panggil reload() lagi di sini.
+                            await removePertandingan(selectedPertandingan.id);
                             setOpenDelete(false);
                             setSelectedPertandingan(null);
                         }}
-                        PesertaName={`${selectedPertandingan.peserta1_name} vs ${selectedPertandingan.peserta2_name}`}
+                        PesertaName={`${selectedPertandingan.peserta1_name} vs ${selectedPertandingan.peserta2_name ?? t("bye")}`}
                     />
                 )}
+
+                <PertandinganDetailDialog
+                    open={openDetail}
+                    pertandinganId={detailId}
+                    onClose={handleCloseDetail}
+                />
             </Box>
         </Box>
     );

@@ -22,6 +22,8 @@ import Penyisihan from './components/turnament/penyisihan/Penyisihan';
 import CreatePenyisihan from './components/turnament/penyisihan/CreatePenyisihanModal';
 import Quarter from './components/turnament/perempat/quarter';
 import CreateQuarter from './components/turnament/perempat/CreateQuarterModal';
+import Score from './components/hitungTurnamen/score/Score';
+import ScoreDetail from './components/hitungTurnamen/score/ScoreDetail';
 
 function App() {
   return (
@@ -64,6 +66,8 @@ function App() {
         {/* hitungTurnamen */}
         <Route path="/hitungTurnamen/controller" element={<HitungTurnamen />} />
         <Route path="/hitungTurnamen/controller/:id" element={<HitungTurnamen />} />
+        <Route path="/hitungTurnamen/skor" element={<Score />} />
+        <Route path="/hitungTurnamen/skor/:id" element={<ScoreDetail />} />
 
         {/* menu sedang proses */}
         <Route path="/datamaster/category-discipline" element={<BlankPage />} />

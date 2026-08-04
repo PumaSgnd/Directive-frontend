@@ -17,7 +17,8 @@ import {
     Divider,
     TextField,
     MenuItem,
-    TablePagination
+    TablePagination,
+    Chip,
 } from "@mui/material";
 
 import { Add, Edit, Delete } from "@mui/icons-material";
@@ -150,6 +151,36 @@ export default function Penyisihan() {
         setDetailId(null);
     };
 
+    const getStatusText = (status?: string) => {
+        switch (status) {
+            case "belum_mulai":
+                return t("belum_mulai");
+            case "berlangsung":
+                return t("berlangsung");
+            case "pause":
+                return t("pause");
+            case "selesai":
+                return t("selesai");
+            default:
+                return t("semua");
+        }
+    };
+
+    const getStatusColor = (
+        status?: string
+    ): "default" | "warning" | "success" | "info" => {
+        switch (status) {
+            case "berlangsung":
+                return "warning";
+            case "pause":
+                return "info";
+            case "selesai":
+                return "success";
+            default:
+                return "default";
+        }
+    };
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" mt={10}>
@@ -265,19 +296,11 @@ export default function Penyisihan() {
                                             </TableCell>
 
                                             <TableCell align="center">
-                                                <Typography
-                                                    sx={{
-                                                        fontWeight: 600,
-                                                        color:
-                                                            match.status === "belum_mulai"
-                                                                ? "text.secondary"
-                                                                : match.status === "berlangsung"
-                                                                    ? "warning.main"
-                                                                    : "success.main",
-                                                    }}
-                                                >
-                                                    {formatText(t(match.status))}
-                                                </Typography>
+                                                <Chip
+                                                    label={getStatusText(match.status)}
+                                                    color={getStatusColor(match.status)}
+                                                    size="medium"
+                                                />
                                             </TableCell>
 
                                             <TableCell align="center">
