@@ -23,20 +23,24 @@ import { fetchPeserta, updatePeserta } from "../../../api/datamaster/peserta/pes
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
+import InputAdornment from "@mui/material/InputAdornment";
+import { useTranslation } from "react-i18next";
 
 export default function EditPesertaModal() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { sidebarOpen, pageTitle, setPageTitle } = useStore();
   const drawerWidth = sidebarOpen ? 260 : 70;
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
   const [regional, setRegional] = useState("");
+  const [weight, setWeight] = useState("");
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
-    setPageTitle("Edit Peserta");
+    setPageTitle(t("editPeserta"));
     const loadPeserta = async () => {
       try {
         const data = await fetchPeserta();
@@ -44,6 +48,7 @@ export default function EditPesertaModal() {
         if (found) {
           setName(found.name);
           setRegional(found.regional);
+          setWeight(String(found.weight));
         } else {
           navigate("/datamaster/peserta");
         }
@@ -55,7 +60,7 @@ export default function EditPesertaModal() {
     };
 
     if (id) loadPeserta();
-  }, [id, navigate, setPageTitle]);
+  }, [id, t, navigate, setPageTitle]);
 
   useEffect(() => {
     document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -63,13 +68,13 @@ export default function EditPesertaModal() {
 
   const handleSave = async () => {
     setErrors(fieldErrors);
-    if (fieldErrors.name || fieldErrors.regional) {
+    if (fieldErrors.name || fieldErrors.regional || fieldErrors.weight) {
       return;
     }
 
     setLoading(true);
     try {
-      await updatePeserta(Number(id), { name, regional });
+      await updatePeserta(Number(id), { name, regional, weight: parseFloat(weight.replace(",", ".")), });
       setOpenDialog(true);
     } catch (error) {
       console.error(error);
@@ -83,14 +88,20 @@ export default function EditPesertaModal() {
     navigate("/datamaster/peserta");
   };
 
-  const [errors, setErrors] = useState({ name: "", regional: "" });
+  const [errors, setErrors] = useState({ name: "", regional: "", weight: "" });
 
   const fieldErrors = useMemo(
     () => ({
-      name: name ? "" : "Peserta is required.",
-      regional: regional ? "" : "regional is required.",
+      name: name ? "" : t("pesertaRequired"),
+      regional: regional ? "" : t("regionalRequired"),
+      weight:
+        weight === ""
+          ? t("weightRequired")
+          : isNaN(Number(weight.replace(",", ".")))
+            ? t("weightMustBeNumber")
+            : "",
     }),
-    [name, regional]
+    [name, regional, weight]
   );
 
   if (loading) {
@@ -123,7 +134,7 @@ export default function EditPesertaModal() {
             {pageTitle}
           </Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <Tooltip title="Fullscreen">
+            <Tooltip title={t("fullscreen")}>
               <IconButton aria-label="Toggle fullscreen" size="medium">
                 <FullscreenIcon fontSize="medium" />
               </IconButton>
@@ -136,11 +147,11 @@ export default function EditPesertaModal() {
           <CardContent>
             <Box display="flex" flexDirection="column" gap={2} mt={2} ml={4} mr={4}>
               <Typography variant="body2" color="error" mb={2}>
-                Note: (<span style={{ color: "red" }}>*</span>) Required fields
+                {t("requiredNote")}
               </Typography>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Name
+                  {t("name")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 17.4 }}>
                   *
@@ -156,7 +167,7 @@ export default function EditPesertaModal() {
               </Box>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Regional
+                  {t("regional")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 14.7 }}>
                   *
@@ -177,12 +188,50 @@ export default function EditPesertaModal() {
                   <MenuItem value="kabupaten_sumedang">Kabupaten Sumedang</MenuItem>
                 </TextField>
               </Box >
+              <Box display="flex" alignItems="center">
+                <Typography variant="body1" sx={{ mr: 1 }}>
+                  {t("weight")}
+                </Typography>
+
+                <Typography
+                  variant="body1"
+                  color="error"
+                  sx={{ mr: 16.3 }}
+                >
+                  *
+                </Typography>
+
+                <TextField
+                  value={weight}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(",", ".");
+
+                    // hanya boleh satu titik
+                    value = value.replace(/(\..*)\./g, "$1");
+
+                    setWeight(value);
+                  }}
+                  type="text"
+                  fullWidth
+                  margin="normal"
+                  placeholder={t("weightPlaceholder")}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        Kg
+                      </InputAdornment>
+                    ),
+                  }}
+                  error={!!errors.weight}
+                  helperText={errors.weight}
+                />
+              </Box>
               <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
                 <Button variant="contained" color="error" onClick={handleSave} aria-label="Save Peserta">
-                  Submit
+                  {t("save")}
                 </Button>
                 <Button variant="contained" color="warning" onClick={() => navigate(-1)} aria-label="Back">
-                  Back
+                  {t("back")}
                 </Button>
               </Box>
             </Box>
@@ -193,11 +242,11 @@ export default function EditPesertaModal() {
             <DialogTitle>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <CheckCircleIcon sx={{ color: "green", fontSize: 100, my: 2 }} />
-                <Typography variant="h6">Success</Typography>
+                <Typography variant="h6">{t("success")}</Typography>
               </Box>
             </DialogTitle>
             <Typography variant="body1" sx={{ textAlign: "center" }}>
-              Peserta updated successfully!
+              {t("pesertaUpdated")}
             </Typography>
           </DialogContent>
           <DialogActions>

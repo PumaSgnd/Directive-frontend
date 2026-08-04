@@ -18,6 +18,10 @@ import UserManagement from './components/datamaster/usermanagement/UserManagemen
 import CreateUser from './components/datamaster/usermanagement/CreateUserModal';
 import EditUser from './components/datamaster/usermanagement/EditUserModal';
 import HitungTurnamen from './components/hitungTurnamen/Controller';
+import Penyisihan from './components/turnament/penyisihan/Penyisihan';
+import CreatePenyisihan from './components/turnament/penyisihan/CreatePenyisihanModal';
+import Quarter from './components/turnament/perempat/quarter';
+import CreateQuarter from './components/turnament/perempat/CreateQuarterModal';
 
 function App() {
   return (
@@ -51,8 +55,15 @@ function App() {
         <Route path="/datamaster/pic/create-pic" element={<CreatePIC />} />
         <Route path="/datamaster/pic/edit/:id" element={<EditPIC />} />
 
+        {/* pertandingan */}
+        <Route path="/pertandingan/penyisihan" element={<Penyisihan />} />
+        <Route path="/pertandingan/penyisihan/create-penyisihan" element={<CreatePenyisihan />} />
+        <Route path="/pertandingan/perempat-final" element={<Quarter />} />
+        <Route path="/pertandingan/perempat-final/create-perempat-final" element={<CreateQuarter />} />
+
         {/* hitungTurnamen */}
         <Route path="/hitungTurnamen/controller" element={<HitungTurnamen />} />
+        <Route path="/hitungTurnamen/controller/:id" element={<HitungTurnamen />} />
 
         {/* menu sedang proses */}
         <Route path="/datamaster/category-discipline" element={<BlankPage />} />

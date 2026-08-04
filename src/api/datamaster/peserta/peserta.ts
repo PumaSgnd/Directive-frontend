@@ -1,11 +1,11 @@
-import axios from "axios";
+import API from "../../../api/api.js";
 import { Peserta } from "../../../types/peserta";
 
 const API_URL = "http://localhost:5000/api/peserta";
 
 export const fetchPeserta = async () => {
   try {
-    const response = await axios.get<Peserta[]>(API_URL);
+    const response = await API.get<Peserta[]>(API_URL);
     return response.data;
   } catch (error) {
     console.error("Error fetching Peserta:", error);
@@ -15,7 +15,7 @@ export const fetchPeserta = async () => {
 
 export const createPeserta = async (data: Omit<Peserta, "id">) => {
   try {
-    const response = await axios.post<Peserta>(API_URL, data, {
+    const response = await API.post<Peserta>(API_URL, data, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -30,7 +30,7 @@ export const createPeserta = async (data: Omit<Peserta, "id">) => {
 
 export const updatePeserta = async (id: number, data: Omit<Peserta, "id">) => {
   try {
-    const response = await axios.put<Peserta>(`${API_URL}/${id}`, data);
+    const response = await API.put<Peserta>(`${API_URL}/${id}`, data);
     return response.data;
   } catch (error) {
     console.error("Error updating Peserta:", error);
@@ -40,7 +40,7 @@ export const updatePeserta = async (id: number, data: Omit<Peserta, "id">) => {
 
 export const deletePeserta = async (id: number) => {
   try {
-    await axios.delete(`${API_URL}/${id}`);
+    await API.delete(`${API_URL}/${id}`);
   } catch (error) {
     console.error("Error deleting peserta:", error);
     throw error;

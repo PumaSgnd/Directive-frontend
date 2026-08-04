@@ -57,7 +57,7 @@ export function useLoginForm() {
                     localStorage.removeItem("rememberedPassword");
                 }
 
-                setDialog({ open: true, type: "success", message: "You are logged in successfully!" });
+                setDialog({ open: false, type: "success", message: "You are logged in successfully!" });
 
                 setTimeout(() => {
                     navigate("/dashboard");

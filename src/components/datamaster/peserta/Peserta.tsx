@@ -16,12 +16,12 @@ import {
     Tooltip,
     Divider,
     TextField,
-    MenuItem
+    MenuItem,
+    TablePagination
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
-import { TablePagination } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
@@ -30,16 +30,22 @@ import { useStore } from "../../../hooks/useStore";
 import { usePesertaStore } from "../../../stores/PesertaStore";
 import { usePeserta } from "../../../hooks/usePeserta";
 import PaginationActions from "../../custom/PaginationActions";
+import { useTranslation } from "react-i18next";
+
+type SortByType = "default" | "no" | "name" | "regional" | "weight";
 
 export default function Peserta() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const { Peserta, loading, selectedPeserta, setSelectedPeserta } = usePesertaStore();
     const { loadPeserta, removePeserta } = usePeserta();
+    const { t } = useTranslation();
+
     const drawerWidth = sidebarOpen ? 260 : 70;
+
     const [openDelete, setOpenDelete] = useState(false);
     const [search, setSearch] = useState("");
-    const [sortBy, setSortBy] = useState<"default" | "no" | "name" | "regional">("default");
+    const [sortBy, setSortBy] = useState<SortByType>("default");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -50,10 +56,8 @@ export default function Peserta() {
             document.documentElement.requestFullscreen();
             setIsFullscreen(true);
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                setIsFullscreen(false);
-            }
+            document.exitFullscreen?.();
+            setIsFullscreen(false);
         }
     };
 
@@ -63,23 +67,20 @@ export default function Peserta() {
         };
 
         document.addEventListener("fullscreenchange", handleChange);
-
-        return () => {
-            document.removeEventListener("fullscreenchange", handleChange);
-        };
+        return () => document.removeEventListener("fullscreenchange", handleChange);
     }, []);
 
     useEffect(() => {
         loadPeserta();
-        setPageTitle("Peserta");
-    }, []);
+        setPageTitle(t("peserta"));
+    }, [t]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
     }, [pageTitle]);
 
     const memoizedPeserta = useMemo(
-        () => Array.isArray(Peserta) ? Peserta : [],
+        () => (Array.isArray(Peserta) ? Peserta : []),
         [Peserta]
     );
 
@@ -88,7 +89,8 @@ export default function Peserta() {
 
         if (search) {
             data = data.filter((item) =>
-                item.name.toLowerCase().includes(search.toLowerCase())
+                item.name.toLowerCase().includes(search.toLowerCase()) ||
+                item.weight.toString().includes(search)
             );
         }
 
@@ -99,25 +101,25 @@ export default function Peserta() {
         }
 
         if (sortBy === "name") {
-            data.sort((a, b) => {
-                if (sortOrder === "asc") {
-                    return a.name.localeCompare(b.name);
-                }
-                return b.name.localeCompare(a.name);
-            });
+            data.sort((a, b) =>
+                sortOrder === "asc"
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name)
+            );
         }
 
         if (sortBy === "regional") {
-            data.sort((a, b) => {
-                if (sortOrder === "asc") {
-                    return a.regional.localeCompare(b.regional);
-                }
-                return b.regional.localeCompare(a.regional);
-            });
+            data.sort((a, b) =>
+                sortOrder === "asc"
+                    ? a.regional.localeCompare(b.regional)
+                    : b.regional.localeCompare(a.regional)
+            );
         }
 
-        if (sortBy === "default") {
-            return data;
+        if (sortBy === "weight") {
+            data.sort((a, b) =>
+                sortOrder === "asc" ? a.weight - b.weight : b.weight - a.weight
+            );
         }
 
         return data;
@@ -135,14 +137,13 @@ export default function Peserta() {
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" mt={10}>
-                <CircularProgress role="progressbar" aria-label="Loading Peserta..." />
+                <CircularProgress />
             </Box>
         );
     }
 
     const formatText = (text: string) => {
         if (!text) return "";
-
         return text
             .replace(/_/g, " ")
             .toLowerCase()
@@ -150,47 +151,38 @@ export default function Peserta() {
     };
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
-            <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
+        <Box sx={{ display: "flex", minHeight: "100vh", width: "100vw" }}>
+            <Box sx={{ width: drawerWidth, position: "fixed" }}>
                 <Sidebar />
             </Box>
-            <Box
-                flexGrow={1}
-                ml={`${drawerWidth}px`}
-                padding={3}
-                fontFamily="Roboto, sans-serif"
-                bgcolor="linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)"
-            >
+
+            <Box flexGrow={1} ml={`${drawerWidth}px`} p={3}>
+                {/* HEADER */}
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                    <Typography variant="h2" fontWeight={600} fontSize={26}>
+                    <Typography fontSize={26} fontWeight={600}>
                         {pageTitle}
                     </Typography>
+
                     <Box display="flex" alignItems="center" gap={1}>
                         <Tooltip title="Fullscreen">
-                            <IconButton size="medium" aria-label="Toggle fullscreen view" onClick={toggleFullscreen}>
-                                {isFullscreen ? (
-                                    <FullscreenExitIcon fontSize="medium" />
-                                ) : (
-                                    <FullscreenIcon fontSize="medium" />
-                                )}
+                            <IconButton onClick={toggleFullscreen}>
+                                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
                             </IconButton>
                         </Tooltip>
                         <UserMenu />
                     </Box>
                 </Box>
+
                 <Divider />
-                <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mt={5}
-                >
+
+                {/* FILTER */}
+                <Box display="flex" justifyContent="space-between" mt={4}>
                     <TextField
                         select
                         size="small"
                         value={sortBy}
                         onChange={(e) => {
-                            const value = e.target.value as "default" | "no" | "name";
+                            const value = e.target.value as SortByType;
 
                             if (value === sortBy) {
                                 setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -201,52 +193,58 @@ export default function Peserta() {
                         }}
                         sx={{ width: 150 }}
                     >
-                        <MenuItem value="default">Filter</MenuItem>
+                        <MenuItem value="default">{t("filter")}</MenuItem>
                         <MenuItem value="no">No</MenuItem>
-                        <MenuItem value="name">Name</MenuItem>
-                        <MenuItem value="regional">Regional</MenuItem>
+                        <MenuItem value="name">{t("name")}</MenuItem>
+                        <MenuItem value="weight">{t("weight")}</MenuItem>
+                        <MenuItem value="regional">{t("regional")}</MenuItem>
                     </TextField>
+
                     <TextField
-                        placeholder="Search..."
+                        placeholder={t("search")}
                         size="small"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         sx={{ width: 250 }}
                     />
                 </Box>
-                <Card sx={{ mt: 5 }}>
+
+                {/* TABLE */}
+                <Card sx={{ mt: 4 }}>
                     <CardContent>
                         <TableContainer>
-                            <Table aria-label="Peserta List Table">
+                            <Table>
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>No</TableCell>
-                                        <TableCell>Name</TableCell>
-                                        <TableCell>Regional</TableCell>
-                                        <TableCell>Actions</TableCell>
+                                        <TableCell>{t("name")}</TableCell>
+                                        <TableCell>{t("weight")}</TableCell>
+                                        <TableCell>{t("regional")}</TableCell>
+                                        <TableCell>{t("actions")}</TableCell>
                                     </TableRow>
                                 </TableHead>
+
                                 <TableBody>
-                                    {paginatedPeserta.map((Peserta, index) => (
-                                        <TableRow key={Peserta.id}>
+                                    {paginatedPeserta.map((item, index) => (
+                                        <TableRow key={item.id}>
                                             <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                                            <TableCell>{formatText(Peserta.name)}</TableCell>
-                                            <TableCell>{formatText(Peserta.regional)}</TableCell>
+                                            <TableCell>{formatText(item.name)}</TableCell>
+                                            <TableCell>{item.weight} Kg</TableCell>
+                                            <TableCell>{formatText(item.regional)}</TableCell>
                                             <TableCell>
                                                 <IconButton
                                                     color="primary"
-                                                    size="small"
-                                                    aria-label={`Edit ${Peserta.name}`}
-                                                    onClick={() => navigate(`/datamaster/peserta/edit/${Peserta.id}`)}
+                                                    onClick={() =>
+                                                        navigate(`/datamaster/peserta/edit/${item.id}`)
+                                                    }
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
+
                                                 <IconButton
                                                     color="error"
-                                                    size="small"
-                                                    aria-label={`Delete ${Peserta.name}`}
                                                     onClick={() => {
-                                                        setSelectedPeserta(Peserta);
+                                                        setSelectedPeserta(item);
                                                         setOpenDelete(true);
                                                     }}
                                                 >
@@ -259,6 +257,7 @@ export default function Peserta() {
                             </Table>
                         </TableContainer>
 
+                        {/* FOOTER */}
                         <Box
                             display="flex"
                             justifyContent="space-between"
@@ -270,35 +269,36 @@ export default function Peserta() {
                                 component="div"
                                 count={filteredPeserta.length}
                                 page={page}
-                                onPageChange={(event, newPage) => setPage(newPage)}
+                                onPageChange={(_, newPage) => setPage(newPage)}
                                 rowsPerPage={rowsPerPage}
-                                onRowsPerPageChange={(event) => {
-                                    setRowsPerPage(parseInt(event.target.value, 10));
+                                onRowsPerPageChange={(e) => {
+                                    setRowsPerPage(parseInt(e.target.value, 10));
                                     setPage(0);
                                 }}
                                 rowsPerPageOptions={[5, 10, 25, 50, 100]}
-                                labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
-                                labelRowsPerPage="Rows"
+                                labelRowsPerPage={t("rows")}
+                                labelDisplayedRows={({ from, to, count }) =>
+                                    `${from}-${to} ${t("of")} ${count}`
+                                }
                                 ActionsComponent={PaginationActions}
-                                sx={{
-                                    "& .MuiTablePagination-select": {
-                                        border: "1px solid #ccc",
-                                    }
-                                }}
                             />
 
                             <Button
                                 variant="contained"
                                 color="error"
                                 startIcon={<Add />}
-                                onClick={() => navigate("/datamaster/peserta/create-peserta")}
+                                onClick={() =>
+                                    navigate("/datamaster/peserta/create-peserta")
+                                }
                                 aria-label="Create New Peserta"
                             >
-                                Create
+                                {t("create")}
                             </Button>
                         </Box>
                     </CardContent>
                 </Card>
+
+                {/* DELETE DIALOG */}
                 {selectedPeserta && (
                     <DeletePesertaDialog
                         open={openDelete}

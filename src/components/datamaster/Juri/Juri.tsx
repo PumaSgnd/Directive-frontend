@@ -30,12 +30,16 @@ import { useStore } from "../../../hooks/useStore";
 import { useJuriStore } from "../../../stores/JuriStore";
 import { useJuri } from "../../../hooks/useJuri";
 import PaginationActions from "../../custom/PaginationActions";
+import { useTranslation } from "react-i18next";
+
 
 export default function Juri() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const { Juri, loading, selectedJuri, setSelectedJuri } = useJuriStore();
     const { loadJuri, removeJuri } = useJuri();
+    const { t } = useTranslation();
+    
     const drawerWidth = sidebarOpen ? 260 : 70;
     const [openDelete, setOpenDelete] = useState(false);
     const [search, setSearch] = useState("");
@@ -71,8 +75,8 @@ export default function Juri() {
 
     useEffect(() => {
         loadJuri();
-        setPageTitle("Juri");
-    }, []);
+        setPageTitle(t("juri"));
+    }, [t]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -148,7 +152,7 @@ export default function Juri() {
                         {pageTitle}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Tooltip title="Fullscreen">
+                        <Tooltip title={t("fullscreen")}>
                             <IconButton size="medium" aria-label="Toggle fullscreen view" onClick={toggleFullscreen}>
                                 {isFullscreen ? (
                                     <FullscreenExitIcon fontSize="medium" />
@@ -183,12 +187,12 @@ export default function Juri() {
                         }}
                         sx={{ width: 150 }}
                     >
-                        <MenuItem value="default">Filter</MenuItem>
+                        <MenuItem value="default">{t("filter")}</MenuItem>
                         <MenuItem value="no">No</MenuItem>
-                        <MenuItem value="name">Name</MenuItem>
+                        <MenuItem value="name">{t("name")}</MenuItem>
                     </TextField>
                     <TextField
-                        placeholder="Search..."
+                        placeholder={t("search")}
                         size="small"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -202,8 +206,8 @@ export default function Juri() {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>No</TableCell>
-                                        <TableCell>Name</TableCell>
-                                        <TableCell>Actions</TableCell>
+                                        <TableCell>{t("name")}</TableCell>
+                                        <TableCell>{t("actions")}</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -258,7 +262,7 @@ export default function Juri() {
                                 }}
                                 rowsPerPageOptions={[5, 10, 25, 50, 100]}
                                 labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
-                                labelRowsPerPage="Rows"
+                                labelRowsPerPage={t("rows")}
                                 ActionsComponent={PaginationActions}
                                 sx={{
                                     "& .MuiTablePagination-select": {
@@ -274,7 +278,7 @@ export default function Juri() {
                                 onClick={() => navigate("/datamaster/juri/create-juri")}
                                 aria-label="Create New Juri"
                             >
-                                Create
+                                {t("create")}
                             </Button>
                         </Box>
                         {/* <Box display="flex" justifyContent="flex-end" mt={5} mb={2}>

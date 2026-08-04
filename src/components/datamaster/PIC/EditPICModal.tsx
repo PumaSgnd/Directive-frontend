@@ -13,34 +13,50 @@ import {
   DialogTitle,
   IconButton,
   Tooltip,
-  CircularProgress
+  CircularProgress,
+  InputAdornment,
+  MenuItem
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchPIC, updatePIC } from "../../../api/datamaster/pic/pic";
+import { updatePIC } from "../../../api/datamaster/pic/pic";
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
+import { UpdateUserPayload } from "../../../types/user";
+import { useTranslation } from "react-i18next";
+import { fetchUser } from "../../../api/datamaster/user/UserManagement";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 export default function EditPICModal() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { sidebarOpen, pageTitle, setPageTitle } = useStore();
   const drawerWidth = sidebarOpen ? 260 : 70;
+  const { t } = useTranslation();
 
-  const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [full_name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("");
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
-    setPageTitle("Edit PIC");
-    const loadPIC = async () => {
+    setPageTitle(t("editPIC"));
+    const loaduser = async () => {
       try {
-        const data = await fetchPIC();
+        const data = await fetchUser();
         const found = data.find((d) => d.id === Number(id));
         if (found) {
-          setName(found.name);
+          setName(found.full_name);
+          setUsername(found.username);
+          setEmail(found.email);
+          setPassword(found.password || "");
+          setRole(found.role);
         } else {
           navigate("/datamaster/pic");
         }
@@ -51,8 +67,8 @@ export default function EditPICModal() {
       }
     };
 
-    if (id) loadPIC();
-  }, [id, navigate, setPageTitle]);
+    if (id) loaduser();
+  }, [id, t, navigate, setPageTitle]);
 
   useEffect(() => {
     document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -60,8 +76,21 @@ export default function EditPICModal() {
 
   const handleSave = async () => {
     try {
-      await updatePIC(Number(id), { name });
+      const payload: UpdateUserPayload = {
+        full_name,
+        username,
+        email,
+        role
+      };
+
+      if (password && password.trim() !== "") {
+        payload.password = password;
+      }
+
+      await updatePIC(Number(id), payload);
+
       setOpenDialog(true);
+
     } catch (error) {
       console.error(error);
     } finally {
@@ -104,7 +133,7 @@ export default function EditPICModal() {
             {pageTitle}
           </Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <Tooltip title="Fullscreen">
+            <Tooltip title={t("fullscreen")}>
               <IconButton aria-label="Toggle fullscreen" size="medium">
                 <FullscreenIcon fontSize="medium" />
               </IconButton>
@@ -117,43 +146,117 @@ export default function EditPICModal() {
           <CardContent>
             <Box display="flex" flexDirection="column" gap={2} mt={2} ml={4} mr={4}>
               <Typography variant="body2" color="error" mb={2}>
-                Note: (<span style={{ color: "red" }}>*</span>) Required fields
+                {t("requiredNote")}
               </Typography>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Name
+                  {t("name")}
                 </Typography>
-                <Typography variant="body1" color="error" sx={{ mr: 20 }}>
+                <Typography variant="body1" color="error" sx={{ mr: 17.7 }}>
                   *
                 </Typography>
                 <TextField
-                  value={name}
+                  value={full_name}
                   onChange={(e) => setName(e.target.value)}
                   fullWidth
                   margin="normal"
                 />
               </Box>
+              <Box display="flex" alignItems="center">
+                <Typography variant="body1" sx={{ mr: 1 }}>
+                  {t("username")}
+                </Typography>
+                <Typography variant="body1" color="error" sx={{ mr: 14.2 }}>
+                  *
+                </Typography>
+                <TextField
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                  fullWidth
+                  margin="normal"
+                />
+              </Box >
+              <Box display="flex" alignItems="center">
+                <Typography variant="body1" sx={{ mr: 1 }}>
+                  {t("email")}
+                </Typography>
+                <Typography variant="body1" color="error" sx={{ mr: 18.2 }}>
+                  *
+                </Typography>
+                <TextField
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                  fullWidth
+                  margin="normal"
+                />
+              </Box>
+              <Box display="flex" alignItems="center">
+                <Typography variant="body1" sx={{ mr: 1 }}>
+                  {t("password")}
+                </Typography>
+                <Typography variant="body1" color="error" sx={{ mr: 14.4 }}>
+                  *
+                </Typography>
+                <TextField
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              </Box>
+              <Box display="flex" alignItems="center">
+                <Typography variant="body1" sx={{ mr: 1 }}>
+                  {t("role")}
+                </Typography>
+                <Typography variant="body1" color="error" sx={{ mr: 19.2 }}>
+                  *
+                </Typography>
+
+                <TextField
+                  select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                >
+                  {/* <MenuItem value="developer">Developer</MenuItem> */}
+                  <MenuItem value="panitia">Panitia</MenuItem>
+                </TextField>
+              </Box>
               <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
-                <Button variant="contained" color="error" onClick={handleSave} aria-label="Save PIC">
-                  Submit
+                <Button variant="contained" color="error" onClick={handleSave} aria-label="Save user">
+                  {t("save")}
                 </Button>
                 <Button variant="contained" color="warning" onClick={() => navigate(-1)} aria-label="Back">
-                  Back
+                  {t("back")}
                 </Button>
               </Box>
             </Box>
           </CardContent>
         </Card>
-        <Dialog open={openDialog} onClose={handleCloseDialog} aria-labelledby="success-dialog-title" sx={{ '& .MuiDialog-paper': { borderRadius: '16px', width: 360, minHeight: 300 } }}>
+        <Dialog open={openDialog} onClose={handleCloseDialog} sx={{ '& .MuiDialog-paper': { borderRadius: '16px', width: 360, minHeight: 300 } }}>
           <DialogContent>
             <DialogTitle>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <CheckCircleIcon sx={{ color: "green", fontSize: 100, my: 2 }} />
-                <Typography variant="h6">Success</Typography>
+                <Typography variant="h6">{t("success")}</Typography>
               </Box>
             </DialogTitle>
             <Typography variant="body1" sx={{ textAlign: "center" }}>
-              PIC updated successfully!
+              {t("picUpdated")}
             </Typography>
           </DialogContent>
           <DialogActions>

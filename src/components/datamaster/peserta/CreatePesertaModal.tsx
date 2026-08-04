@@ -22,23 +22,27 @@ import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
 import { createPeserta } from "../../../api/datamaster/peserta/peserta";
+import InputAdornment from "@mui/material/InputAdornment";
+import { useTranslation } from "react-i18next";
 
 export default function CreatePesertaModal() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const drawerWidth = sidebarOpen ? 260 : 70;
+    const { t } = useTranslation();
 
     const [name, setName] = useState("");
     const [regional, setRegional] = useState("");
+    const [weight, setWeight] = useState("");
     const [loading, setLoading] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [dialogMessage, setDialogMessage] = useState("");
 
-    const [errors, setErrors] = useState({ name: "", regional: "" });
+    const [errors, setErrors] = useState({ name: "", regional: "", weight: "" });
 
     useEffect(() => {
-        setPageTitle("Create Peserta");
-    }, []);
+        setPageTitle(t("createPeserta"));
+    }, [t]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -46,29 +50,35 @@ export default function CreatePesertaModal() {
 
     const fieldErrors = useMemo(
         () => ({
-            name: name ? "" : "Peserta is required.",
-            regional: regional ? "" : "regional is required.",
+            name: name ? "" : t("pesertaRequired"),
+            regional: regional ? "" : t("regionalRequired"),
+            weight:
+                weight === ""
+                    ? t("weightRequired")
+                    : isNaN(Number(weight))
+                        ? t("weightMustBeNumber")
+                        : "",
         }),
-        [name, regional]
+        [name, regional, weight]
     );
 
     const handleSubmit = async () => {
         setErrors(fieldErrors);
-        if (fieldErrors.name || fieldErrors.regional) {
+        if (fieldErrors.name || fieldErrors.regional || fieldErrors.weight) {
             return;
         }
 
         setLoading(true);
         try {
-            await createPeserta({ name, regional });
-            setDialogMessage("Peserta created successfully.");
+            await createPeserta({ name, regional, weight: Number(weight), });
+            setDialogMessage(t("pesertaCreated"));
             setOpenDialog(true);
             setTimeout(() => {
                 navigate("/datamaster/peserta");
             }, 2000);
         } catch (error) {
             console.error(error);
-            setDialogMessage("Error creating Peserta.");
+            setDialogMessage(t("pesertaError"));
             setOpenDialog(true);
         } finally {
             setLoading(false);
@@ -91,7 +101,7 @@ export default function CreatePesertaModal() {
                         {pageTitle}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Tooltip title="Fullscreen">
+                        <Tooltip title={t("fullscreen")}>
                             <IconButton aria-label="Toggle fullscreen" size="medium">
                                 <FullscreenIcon fontSize="medium" />
                             </IconButton>
@@ -104,11 +114,11 @@ export default function CreatePesertaModal() {
                     <CardContent>
                         <Box display="flex" flexDirection="column" gap={2} mt={2} ml={4} mr={4}>
                             <Typography variant="body2" color="error" mb={2}>
-                                Note: (<span style={{ color: "red" }}>*</span>) Required fields
+                                {t("requiredNote")}
                             </Typography>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Name
+                                    {t("name")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 17.4 }}>
                                     *
@@ -124,7 +134,7 @@ export default function CreatePesertaModal() {
                             </Box>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Regional
+                                    {t("regional")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 14.7 }}>
                                     *
@@ -145,12 +155,40 @@ export default function CreatePesertaModal() {
                                     <MenuItem value="kabupaten_sumedang">Kabupaten Sumedang</MenuItem>
                                 </TextField>
                             </Box >
+                            <Box display="flex" alignItems="center">
+                                <Typography variant="body1" sx={{ mr: 1 }}>
+                                    {t("weight")}
+                                </Typography>
+                                <Typography variant="body1" color="error" sx={{ mr: 16.4 }}>
+                                    *
+                                </Typography>
+                                <TextField
+                                    value={weight}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(",", ".");
+                                        setWeight(value);
+                                    }}
+                                    type="text"
+                                    fullWidth
+                                    margin="normal"
+                                    placeholder={t("weightPlaceholder")}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                Kg
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    error={!!errors.weight}
+                                    helperText={errors.weight}
+                                />
+                            </Box >
                             <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
                                 <Button variant="contained" color="error" onClick={handleSubmit} aria-label="Submit Peserta">
-                                    {loading ? "Submitting..." : "Submit"}
+                                    {loading ? t("submitting") : t("submit")}
                                 </Button>
                                 <Button variant="contained" color="warning" onClick={() => navigate("/datamaster/peserta")} aria-label="Back to Peserta List">
-                                    Back
+                                    {t("back")}
                                 </Button>
                             </Box>
                         </Box>
@@ -160,7 +198,7 @@ export default function CreatePesertaModal() {
                     <DialogContent sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <CheckCircleIcon sx={{ color: "green", fontSize: 100, my: 2 }} />
                         <DialogTitle id="success-dialog-title" sx={{ fontWeight: "bold" }}>
-                            Success
+                            {t("success")}
                         </DialogTitle>
                         <Typography variant="body1" sx={{ fontSize: 14, textAlign: "center" }}>
                             {dialogMessage}

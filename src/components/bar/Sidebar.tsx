@@ -26,50 +26,60 @@ import {
 } from "@mui/icons-material";
 import directiveLogo from "../../assets/direc.png";
 import Logo from "../../assets/logo.png";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useStore } from "../../hooks/useStore";
 import * as React from "react";
+import { SvgIconProps } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 const drawerWidthOpen = 260;
 const drawerWidthClose = 70;
+
+type MenuItemType = {
+  text: string;
+  icon?: React.ReactElement<SvgIconProps>;
+  path?: string;
+  children?: MenuItemType[];
+};
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { sidebarOpen, toggleSidebar, setPageTitle } = useStore();
-  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+  const { t } = useTranslation();
 
-  const menuItems = useMemo(
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  const menuItems: MenuItemType[] = useMemo(
     () => [
-      { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
+      { text: "dashboard", icon: <Dashboard />, path: "/dashboard" },
       {
-        text: "Data Master",
+        text: "dataMaster",
         icon: <Group />,
         children: [
-          { text: "User Management", icon: <ManageAccounts />, path: "/datamaster/usermanagement" },
-          { text: "PIC", icon: <Person />, path: "/datamaster/pic" },
-          { text: "Peserta", icon: <Groups />, path: "/datamaster/peserta" },
-          { text: "Juri", icon: <Gavel />, path: "/datamaster/juri" },
+          { text: "userManagement", icon: <ManageAccounts />, path: "/datamaster/usermanagement" },
+          { text: "pic", icon: <Person />, path: "/datamaster/pic" },
+          { text: "peserta", icon: <Groups />, path: "/datamaster/peserta" },
+          { text: "juri", icon: <Gavel />, path: "/datamaster/juri" }
         ]
       },
       {
-        text: "Turnamen",
+        text: "turnamen",
         icon: <EmojiEvents />,
         children: [
-          { text: "Babak penyisihan", icon: <SportsScore />, path: "/datamaster/discipline/discipline" },
-          { text: "8 besar(perempat)", icon: <MilitaryTech />, path: "/datamaster/category-discipline" },
-          { text: "Semi final", icon: <MilitaryTech />, path: "/datamaster/sub-category-discipline" },
-          { text: "Final", icon: <EmojiEvents />, path: "/datamaster/sub-category-discipline" }
+          { text: "penyisihan", icon: <SportsScore />, path: "/pertandingan/penyisihan" },
+          { text: "perempat", icon: <MilitaryTech />, path: "/pertandingan/perempat-final" },
+          { text: "semiFinal", icon: <MilitaryTech />, path: "/pertandingan/semi-final" },
+          { text: "final", icon: <EmojiEvents />, path: "/pertandingan/final" }
         ]
       },
       {
-        text: "Hitung Turnamen",
+        text: "hitungTurnamen",
         icon: <Calculate />,
         children: [
-          { text: "Controller", icon: <Calculate />, path: "/hitungTurnamen/controller" },
-          { text: "Skor", icon: <SportsScore />, path: "/datamaster/discipline/discipline" },
-          { text: "History", icon: <History />, path: "/datamaster/category-discipline" }
+          { text: "controller", icon: <Calculate />, path: "/hitungTurnamen/controller" },
+          { text: "skor", icon: <SportsScore />, path: "/hitungTurnamen/skor" },
+          { text: "history", icon: <History />, path: "/hitungTurnamen/history" }
         ]
       }
     ],
@@ -77,12 +87,12 @@ const Sidebar: React.FC = () => {
   );
 
   const handleMenuItemClick = (path: string, text: string) => {
-    setPageTitle(text);
+    setPageTitle(t(text));
     navigate(path);
   };
 
   const handleToggleMenu = (menuText: string) => {
-    setOpenMenus((prev) => ({
+    setOpenMenus(prev => ({
       ...prev,
       [menuText]: !prev[menuText]
     }));
@@ -92,7 +102,7 @@ const Sidebar: React.FC = () => {
     menuItems.forEach(menu => {
       if (menu.children) {
         menu.children.forEach(child => {
-          if (location.pathname.startsWith(child.path)) {
+          if (child.path && location.pathname.startsWith(child.path)) {
             setOpenMenus(prev => ({
               ...prev,
               [menu.text]: true
@@ -101,27 +111,34 @@ const Sidebar: React.FC = () => {
         });
       }
     });
-  }, [location.pathname]);
+  }, [location.pathname, menuItems]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderMenuItems = (items: any[], level = 0) =>
+  const renderMenuItems = (
+    items: MenuItemType[],
+    level = 0
+  ): React.ReactNode =>
     items.map((item, index) => {
       const isActive =
         item.path && location.pathname.startsWith(item.path);
-      const hasChildren = item.children && item.children.length > 0;
+
+      const hasChildren = !!item.children?.length;
       const isOpen = openMenus[item.text] || false;
 
       return (
         <React.Fragment key={`${item.text}-${index}`}>
           <ListItemButton
-            selected={isActive}
+            selected={!!isActive}
             onClick={() =>
               hasChildren
                 ? handleToggleMenu(item.text)
-                : handleMenuItemClick(item.path, item.text)
+                : item.path && handleMenuItemClick(item.path, item.text)
             }
-            sx={{ pl: 2 + level * 2, py: sidebarOpen ? 2 : 2.5, justifyContent: sidebarOpen ? "flex-start" : "center", }}
-            role="menuitem"
+            sx={{
+              pl: 2 + level * 2,
+              py: sidebarOpen ? 2 : 2.5,
+              justifyContent: sidebarOpen ? "flex-start" : "center",
+              transition: "background-color 0.2s ease" // ✅ fix kedip hover
+            }}
           >
             {item.icon && (
               <ListItemIcon
@@ -138,13 +155,20 @@ const Sidebar: React.FC = () => {
                 })}
               </ListItemIcon>
             )}
-            {sidebarOpen && <ListItemText primary={item.text} />}
-            {hasChildren && sidebarOpen && (isOpen ? <ExpandLess /> : <ExpandMore />)}
+
+            {sidebarOpen && (
+              <ListItemText primary={t(item.text)} />
+            )}
+
+            {hasChildren && sidebarOpen && (
+              isOpen ? <ExpandLess /> : <ExpandMore />
+            )}
           </ListItemButton>
+
           {hasChildren && (
             <Collapse in={isOpen} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding role="group">
-                {renderMenuItems(item.children, level + 1)}
+              <List component="div" disablePadding>
+                {renderMenuItems(item.children!, level + 1)}
               </List>
             </Collapse>
           )}
@@ -173,22 +197,27 @@ const Sidebar: React.FC = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          height: 30,
+          height: 60,
           cursor: "pointer",
           p: 2
         }}
         onClick={toggleSidebar}
-        role="button"
-        aria-label="Toggle Sidebar"
       >
         <img
           src={sidebarOpen ? directiveLogo : Logo}
           alt="Logo"
-          style={{ width: sidebarOpen ? 120 : 40, transition: "width 0.3s" }}
+          style={{
+            width: sidebarOpen ? 120 : 40,
+            transition: "width 0.3s"
+          }}
         />
       </Box>
+
       <Divider />
-      <List role="menu">{renderMenuItems(menuItems)}</List>
+
+      <List>
+        {renderMenuItems(menuItems)}
+      </List>
     </Drawer>
   );
 };

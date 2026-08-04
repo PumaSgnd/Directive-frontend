@@ -25,11 +25,13 @@ import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
 import { createUser } from "../../../api/datamaster/user/UserManagement";
+import { useTranslation } from "react-i18next";
 
 export default function CreateUserModal() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const drawerWidth = sidebarOpen ? 260 : 70;
+    const { t } = useTranslation();
 
     const [showPassword, setShowPassword] = useState(false);
     const [full_name, setName] = useState("");
@@ -44,8 +46,8 @@ export default function CreateUserModal() {
     const [errors, setErrors] = useState({ full_name: "", username: "", email: "", password: "", role: "" });
 
     useEffect(() => {
-        setPageTitle("Create User");
-    }, []);
+        setPageTitle(t("createUser"));
+    }, [t]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -53,13 +55,13 @@ export default function CreateUserModal() {
 
     const fieldErrors = useMemo(
         () => ({
-            full_name: full_name ? "" : "Full Name is required.",
-            username: username ? "" : "User Name is required.",
-            email: email ? "" : "Email is required.",
-            password: password ? "" : "Password is required.",
-            role: role ? "" : "Role is required.",
+            full_name: full_name ? "" : t("fullNameRequired"),
+            username: username ? "" : t("usernameRequired"),
+            email: email ? "" : t("emailRequired"),
+            password: password ? "" : t("passwordRequired"),
+            role: role ? "" : t("roleRequired"),
         }),
-        [full_name, username, email, password, role]
+        [full_name, username, email, password, role, t]
     );
 
     const handleSubmit = async () => {
@@ -71,14 +73,14 @@ export default function CreateUserModal() {
         setLoading(true);
         try {
             await createUser({ full_name, username, email, password, role });
-            setDialogMessage("User created successfully.");
+            setDialogMessage(t("userCreated"));
             setOpenDialog(true);
             setTimeout(() => {
                 navigate("/datamaster/usermanagement");
             }, 2000);
         } catch (error) {
             console.error(error);
-            setDialogMessage("Error creating User.");
+            setDialogMessage(t("userError"));
             setOpenDialog(true);
         } finally {
             setLoading(false);
@@ -101,7 +103,7 @@ export default function CreateUserModal() {
                         {pageTitle}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Tooltip title="Fullscreen">
+                        <Tooltip title={t("fullscreen")}>
                             <IconButton aria-label="Toggle fullscreen" size="medium">
                                 <FullscreenIcon fontSize="medium" />
                             </IconButton>
@@ -114,11 +116,11 @@ export default function CreateUserModal() {
                     <CardContent>
                         <Box display="flex" flexDirection="column" gap={2} mt={2} ml={4} mr={4}>
                             <Typography variant="body2" color="error" mb={2}>
-                                Note: (<span style={{ color: "red" }}>*</span>) Required fields
+                                {t("requiredNote")}
                             </Typography>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Name
+                                    {t("fullName")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 17.7 }}>
                                     *
@@ -134,7 +136,7 @@ export default function CreateUserModal() {
                             </Box>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    username
+                                    {t("username")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 14.2 }}>
                                     *
@@ -150,7 +152,7 @@ export default function CreateUserModal() {
                             </Box >
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Email
+                                    {t("email")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 18.2 }}>
                                     *
@@ -166,7 +168,7 @@ export default function CreateUserModal() {
                             </Box>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Password
+                                    {t("password")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 14.4 }}>
                                     *
@@ -195,7 +197,7 @@ export default function CreateUserModal() {
                             </Box>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Role
+                                    {t("role")}
                                 </Typography>
                                 <Typography variant="body1" color="error" sx={{ mr: 19.2 }}>
                                     *
@@ -218,10 +220,10 @@ export default function CreateUserModal() {
                             </Box>
                             <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
                                 <Button variant="contained" color="error" onClick={handleSubmit} aria-label="Submit User">
-                                    {loading ? "Submitting..." : "Submit"}
+                                    {loading ? t("submitting") : t("submit")}
                                 </Button>
                                 <Button variant="contained" color="warning" onClick={() => navigate("/datamaster/usermanagement")} aria-label="Back to User List">
-                                    Back
+                                    {t("back")}
                                 </Button>
                             </Box>
                         </Box>
@@ -231,7 +233,7 @@ export default function CreateUserModal() {
                     <DialogContent sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <CheckCircleIcon sx={{ color: "green", fontSize: 100, my: 2 }} />
                         <DialogTitle id="success-dialog-title" sx={{ fontWeight: "bold" }}>
-                            Success
+                            {t("success")}
                         </DialogTitle>
                         <Typography variant="body1" sx={{ fontSize: 14, textAlign: "center" }}>
                             {dialogMessage}

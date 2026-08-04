@@ -12,7 +12,9 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
-    Tooltip
+    Tooltip,
+    InputAdornment,
+    MenuItem
 } from "@mui/material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -21,22 +23,30 @@ import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
 import { createJuri } from "../../../api/datamaster/juri/juri";
+import { VisibilityOff, Visibility } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 
 export default function CreateJuriModal() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const drawerWidth = sidebarOpen ? 260 : 70;
+    const { t } = useTranslation();
 
-    const [name, setName] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [full_name, setName] = useState("");
+    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [role, setRole] = useState("");
     const [loading, setLoading] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [dialogMessage, setDialogMessage] = useState("");
 
-    const [errors, setErrors] = useState({ Juri: "" });
+    const [errors, setErrors] = useState({ full_name: "", username: "", email: "", password: "", role: "" });
 
     useEffect(() => {
-        setPageTitle("Create Juri");
-    }, []);
+        setPageTitle(t("createJuri"));
+    }, [t]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -44,28 +54,32 @@ export default function CreateJuriModal() {
 
     const fieldErrors = useMemo(
         () => ({
-            Juri: name ? "" : "Juri is required.",
+            full_name: full_name ? "" : t("fullNameRequired"),
+            username: username ? "" : t("usernameRequired"),
+            email: email ? "" : t("emailRequired"),
+            password: password ? "" : t("passwordRequired"),
+            role: role ? "" : t("roleRequired"),
         }),
-        [name]
+        [full_name, username, email, password, role, t]
     );
 
     const handleSubmit = async () => {
         setErrors(fieldErrors);
-        if (fieldErrors.Juri) {
+        if (fieldErrors.full_name || fieldErrors.username || fieldErrors.email || fieldErrors.password || fieldErrors.role) {
             return;
         }
 
         setLoading(true);
         try {
-            await createJuri({ name });
-            setDialogMessage("Juri created successfully.");
+            await createJuri({ full_name, username, email, password, role });
+            setDialogMessage(t("juriCreated"));
             setOpenDialog(true);
             setTimeout(() => {
                 navigate("/datamaster/juri");
             }, 2000);
         } catch (error) {
             console.error(error);
-            setDialogMessage("Error creating Juri.");
+            setDialogMessage(t("juriError"));
             setOpenDialog(true);
         } finally {
             setLoading(false);
@@ -85,10 +99,10 @@ export default function CreateJuriModal() {
             <Box flexGrow={1} ml={`${drawerWidth}px`} padding={3} bgcolor="linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)" fontFamily="Roboto, sans-serif">
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Typography variant="h2" fontWeight={600} fontSize={26}>
-                        Create Juri
+                        {pageTitle}
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1}>
-                        <Tooltip title="Fullscreen">
+                        <Tooltip title={t("fullscreen")}>
                             <IconButton aria-label="Toggle fullscreen" size="medium">
                                 <FullscreenIcon fontSize="medium" />
                             </IconButton>
@@ -101,30 +115,112 @@ export default function CreateJuriModal() {
                     <CardContent>
                         <Box display="flex" flexDirection="column" gap={2} mt={2} ml={4} mr={4}>
                             <Typography variant="body2" color="error" mb={2}>
-                                Note: (<span style={{ color: "red" }}>*</span>) Required fields
+                                {t("requiredNote")}
                             </Typography>
                             <Box display="flex" alignItems="center">
                                 <Typography variant="body1" sx={{ mr: 1 }}>
-                                    Name
+                                    {t("fullName")}
                                 </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 20 }}>
+                                <Typography variant="body1" color="error" sx={{ mr: 17.7 }}>
                                     *
                                 </Typography>
                                 <TextField
-                                    value={name}
+                                    value={full_name}
                                     onChange={(e) => setName(e.target.value)}
                                     fullWidth
                                     margin="normal"
-                                    error={!!errors.Juri}
-                                    helperText={errors.Juri}
+                                    error={!!errors.full_name}
+                                    helperText={errors.full_name}
                                 />
                             </Box>
+                            <Box display="flex" alignItems="center">
+                                <Typography variant="body1" sx={{ mr: 1 }}>
+                                    {t("username")}
+                                </Typography>
+                                <Typography variant="body1" color="error" sx={{ mr: 14.2 }}>
+                                    *
+                                </Typography>
+                                <TextField
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                                    fullWidth
+                                    margin="normal"
+                                    error={!!errors.username}
+                                    helperText={errors.username}
+                                />
+                            </Box >
+                            <Box display="flex" alignItems="center">
+                                <Typography variant="body1" sx={{ mr: 1 }}>
+                                    {t("email")}
+                                </Typography>
+                                <Typography variant="body1" color="error" sx={{ mr: 18.2 }}>
+                                    *
+                                </Typography>
+                                <TextField
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                                    fullWidth
+                                    margin="normal"
+                                    error={!!errors.email}
+                                    helperText={errors.email}
+                                />
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <Typography variant="body1" sx={{ mr: 1 }}>
+                                    {t("password")}
+                                </Typography>
+                                <Typography variant="body1" color="error" sx={{ mr: 14.4 }}>
+                                    *
+                                </Typography>
+                                <TextField
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    fullWidth
+                                    margin="normal"
+                                    error={!!errors.password}
+                                    helperText={errors.password}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        )
+                                    }}
+                                />
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <Typography variant="body1" sx={{ mr: 1 }}>
+                                    {t("role")}
+                                </Typography>
+                                <Typography variant="body1" color="error" sx={{ mr: 19.2 }}>
+                                    *
+                                </Typography>
+
+                                <TextField
+                                    select
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
+                                    fullWidth
+                                    margin="normal"
+                                    error={!!errors.role}
+                                    helperText={errors.role}
+                                >
+                                    {/* <MenuItem value="developer">Developer</MenuItem> */}
+                                    <MenuItem value="juri">Juri</MenuItem>
+                                </TextField>
+                            </Box>
                             <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
-                                <Button variant="contained" color="error" onClick={handleSubmit} aria-label="Submit Juri">
-                                    {loading ? "Submitting..." : "Submit"}
+                                <Button variant="contained" color="error" onClick={handleSubmit} aria-label="Submit User">
+                                    {loading ? t("submitting") : t("submit")}
                                 </Button>
-                                <Button variant="contained" color="warning" onClick={() => navigate("/datamaster/juri")} aria-label="Back to Juri List">
-                                    Back
+                                <Button variant="contained" color="warning" onClick={() => navigate("/datamaster/juri")} aria-label="Back to User List">
+                                    {t("back")}
                                 </Button>
                             </Box>
                         </Box>
@@ -134,7 +230,7 @@ export default function CreateJuriModal() {
                     <DialogContent sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <CheckCircleIcon sx={{ color: "green", fontSize: 100, my: 2 }} />
                         <DialogTitle id="success-dialog-title" sx={{ fontWeight: "bold" }}>
-                            Success
+                            {t("success")}
                         </DialogTitle>
                         <Typography variant="body1" sx={{ fontSize: 14, textAlign: "center" }}>
                             {dialogMessage}

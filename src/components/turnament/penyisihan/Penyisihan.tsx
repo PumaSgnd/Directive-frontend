@@ -15,35 +15,56 @@ import {
     CircularProgress,
     Tooltip,
     Divider,
+    TextField,
     MenuItem,
-    TextField
+    TablePagination
 } from "@mui/material";
+
 import { Add, Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
-import { TablePagination } from "@mui/material";
+
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
-import DeletePICDialog from "./DeletePICDialog";
+import DeletePesertaDialog from "./DeletePenyisihanDialog";
+import PertandinganDetailDialog from "./PertandinganDetailDialog";
+
 import { useStore } from "../../../hooks/useStore";
-import { usePICStore } from "../../../stores/PICStore";
-import { usePIC } from "../../../hooks/usePIC";
+import { usePertandinganStore } from "../../../stores/pertandinganStore";
+import { usePertandingan } from "../../../hooks/usePertandingan";
+
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
 
-export default function PIC() {
+export default function Penyisihan() {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
-    const { pic, loading, selectedPIC, setSelectedPIC } = usePICStore();
-    const { loadPIC, removePIC } = usePIC();
+
+    const {
+        pertandingan,
+        selectedPertandingan,
+        setSelectedPertandingan,
+    } = usePertandinganStore();
+
+    const { loading, removePertandingan } = usePertandingan("penyisihan");
+
     const drawerWidth = sidebarOpen ? 260 : 70;
     const { t } = useTranslation();
-    
+
     const [openDelete, setOpenDelete] = useState(false);
+
+    // ===== DETAIL DIALOG =====
+    // dipisah dari selectedPertandingan (yang dipakai untuk delete)
+    // supaya klik row untuk lihat detail tidak bentrok state-nya
+    // dengan alur hapus.
+    const [detailId, setDetailId] = useState<number | null>(null);
+    const [openDetail, setOpenDetail] = useState(false);
+
     const [search, setSearch] = useState("");
     const [sortBy, setSortBy] = useState<"default" | "no" | "name">("default");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -51,12 +72,8 @@ export default function PIC() {
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
-            setIsFullscreen(true);
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                setIsFullscreen(false);
-            }
+            document.exitFullscreen();
         }
     };
 
@@ -66,32 +83,35 @@ export default function PIC() {
         };
 
         document.addEventListener("fullscreenchange", handleChange);
-
-        return () => {
+        return () =>
             document.removeEventListener("fullscreenchange", handleChange);
-        };
     }, []);
 
     useEffect(() => {
-        loadPIC();
-        setPageTitle(t("pic"));
-    }, [t]);
+        setPageTitle(t("penyisihan"));
+    }, [setPageTitle, t]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
     }, [pageTitle]);
 
-    const memoizedPIC = useMemo(
-        () => Array.isArray(pic) ? pic : [],
-        [pic]
-    );
+    const formatText = (text: string) => {
+        if (!text) return "";
+        return text
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
 
-    const filteredPIC = useMemo(() => {
-        let data = [...memoizedPIC];
+    const filteredMatches = useMemo(() => {
+        let data = [...(pertandingan || [])];
 
         if (search) {
+            const q = search.toLowerCase();
             data = data.filter((item) =>
-                item.name.toLowerCase().includes(search.toLowerCase())
+                item.peserta1_name?.toLowerCase().includes(q) ||
+                // peserta2_name bisa null untuk pertandingan BYE
+                (item.peserta2_name ?? "").toLowerCase().includes(q)
             );
         }
 
@@ -103,33 +123,37 @@ export default function PIC() {
 
         if (sortBy === "name") {
             data.sort((a, b) => {
-                if (sortOrder === "asc") {
-                    return a.name.localeCompare(b.name);
-                }
-                return b.name.localeCompare(a.name);
+                const nameA = `${a.peserta1_name} ${a.peserta2_name ?? ""}`;
+                const nameB = `${b.peserta1_name} ${b.peserta2_name ?? ""}`;
+
+                return sortOrder === "asc"
+                    ? nameA.localeCompare(nameB)
+                    : nameB.localeCompare(nameA);
             });
         }
 
-        if (sortBy === "default") {
-            return data;
-        }
-
         return data;
-    }, [memoizedPIC, search, sortBy, sortOrder]);
+    }, [pertandingan, search, sortBy, sortOrder]);
 
-    const paginatedPIC = useMemo(() => {
+    const paginatedMatches = useMemo(() => {
         const start = page * rowsPerPage;
-        return filteredPIC.slice(start, start + rowsPerPage);
-    }, [filteredPIC, page, rowsPerPage]);
+        return filteredMatches.slice(start, start + rowsPerPage);
+    }, [filteredMatches, page, rowsPerPage]);
 
-    useEffect(() => {
-        setPage(0);
-    }, [search, sortBy, sortOrder]);
-    
+    const handleOpenDetail = (id: number) => {
+        setDetailId(id);
+        setOpenDetail(true);
+    };
+
+    const handleCloseDetail = () => {
+        setOpenDetail(false);
+        setDetailId(null);
+    };
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" mt={10}>
-                <CircularProgress role="progressbar" aria-label="Loading PIC..." />
+                <CircularProgress />
             </Box>
         );
     }
@@ -164,12 +188,7 @@ export default function PIC() {
                     </Box>
                 </Box>
                 <Divider />
-                <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mt={5}
-                >
+                <Box display="flex" justifyContent="space-between" mt={3}>
                     <TextField
                         select
                         size="small"
@@ -178,57 +197,106 @@ export default function PIC() {
                             const value = e.target.value as "default" | "no" | "name";
 
                             if (value === sortBy) {
-                                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+                                setSortOrder((prev) =>
+                                    prev === "asc" ? "desc" : "asc"
+                                );
                             } else {
                                 setSortBy(value);
                                 setSortOrder("asc");
                             }
                         }}
-                        sx={{ width: 150 }}
                     >
                         <MenuItem value="default">{t("filter")}</MenuItem>
-                        <MenuItem value="no">No</MenuItem>
-                        <MenuItem value="name">{t("name")}</MenuItem>
+                        <MenuItem value="no">{t("no")}</MenuItem>
+                        <MenuItem value="name">{t("match")}</MenuItem>
                     </TextField>
+
                     <TextField
                         placeholder={t("search")}
                         size="small"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        sx={{ width: 250 }}
                     />
                 </Box>
-                <Card sx={{ mt: 5 }}>
+                <Card sx={{ mt: 3 }}>
                     <CardContent>
                         <TableContainer>
-                            <Table aria-label="PIC List Table">
+                            <Table>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>No</TableCell>
-                                        <TableCell>{t("name")}</TableCell>
-                                        <TableCell>{t("actions")}</TableCell>
+                                        <TableCell align="center">{t("no")}</TableCell>
+                                        <TableCell align="center">{t("match")}</TableCell>
+                                        <TableCell align="center">{t("status")}</TableCell>
+                                        <TableCell align="center">{t("actions")}</TableCell>
                                     </TableRow>
                                 </TableHead>
+
                                 <TableBody>
-                                    {paginatedPIC.map((pic, index) => (
-                                        <TableRow key={pic.id}>
-                                            <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                                            <TableCell>{pic.name}</TableCell>
-                                            <TableCell>
+                                    {paginatedMatches.map((match, index) => (
+                                        <TableRow
+                                            key={match.id}
+                                            hover
+                                            onClick={() => handleOpenDetail(match.id)}
+                                            sx={{ cursor: "pointer" }}
+                                        >
+                                            <TableCell align="center">
+                                                {page * rowsPerPage + index + 1}
+                                            </TableCell>
+
+                                            <TableCell align="center">
+                                                <Box display="flex" justifyContent="center" gap={1}>
+                                                    {formatText(match.peserta1_name)}
+
+                                                    <Typography
+                                                        sx={{
+                                                            fontWeight: 700,
+                                                            color: "error.main",
+                                                            fontSize: 12,
+                                                            mt: 0.2,
+                                                        }}
+                                                    >
+                                                        {t("vs")}
+                                                    </Typography>
+
+                                                    {match.peserta2_name
+                                                        ? formatText(match.peserta2_name)
+                                                        : t("bye")}
+                                                </Box>
+                                            </TableCell>
+
+                                            <TableCell align="center">
+                                                <Typography
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color:
+                                                            match.status === "belum_mulai"
+                                                                ? "text.secondary"
+                                                                : match.status === "berlangsung"
+                                                                    ? "warning.main"
+                                                                    : "success.main",
+                                                    }}
+                                                >
+                                                    {formatText(t(match.status))}
+                                                </Typography>
+                                            </TableCell>
+
+                                            <TableCell align="center">
                                                 <IconButton
                                                     color="primary"
-                                                    size="small"
-                                                    aria-label={`Edit ${pic.name}`}
-                                                    onClick={() => navigate(`/datamaster/pic/edit/${pic.id}`)}
+                                                    onClick={(e) => {
+                                                        // cegah klik tombol ikut membuka dialog detail
+                                                        e.stopPropagation();
+                                                        navigate(`/pertandingan/edit/${match.id}`);
+                                                    }}
                                                 >
                                                     <Edit fontSize="small" />
                                                 </IconButton>
+
                                                 <IconButton
                                                     color="error"
-                                                    size="small"
-                                                    aria-label={`Delete ${pic.name}`}
-                                                    onClick={() => {
-                                                        setSelectedPIC(pic);
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedPertandingan(match);
                                                         setOpenDelete(true);
                                                     }}
                                                 >
@@ -241,16 +309,11 @@ export default function PIC() {
                             </Table>
                         </TableContainer>
 
-                        <Box
-                            display="flex"
-                            justifyContent="space-between"
-                            alignItems="center"
-                            mt={5}
-                            mb={2}
-                        >
+                        {/* PAGINATION */}
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mt={5} mb={2}>
                             <TablePagination
                                 component="div"
-                                count={filteredPIC.length}
+                                count={filteredMatches.length}
                                 page={page}
                                 onPageChange={(event, newPage) => setPage(newPage)}
                                 rowsPerPage={rowsPerPage}
@@ -273,25 +336,34 @@ export default function PIC() {
                                 variant="contained"
                                 color="error"
                                 startIcon={<Add />}
-                                onClick={() => navigate("/datamaster/pic/create-pic")}
-                                aria-label="Create New PIC"
+                                onClick={() => navigate("/pertandingan/penyisihan/create-penyisihan")}
                             >
                                 {t("create")}
                             </Button>
                         </Box>
                     </CardContent>
                 </Card>
-                {selectedPIC && (
-                    <DeletePICDialog
+
+                {selectedPertandingan && (
+                    <DeletePesertaDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
-                        onConfirm={() => {
-                            removePIC(selectedPIC.id);
+                        onConfirm={async () => {
+                            // removePertandingan sudah reload data secara internal,
+                            // jadi tidak perlu panggil reload() lagi di sini.
+                            await removePertandingan(selectedPertandingan.id);
                             setOpenDelete(false);
+                            setSelectedPertandingan(null);
                         }}
-                        PICName={selectedPIC.name}
+                        PesertaName={`${selectedPertandingan.peserta1_name} vs ${selectedPertandingan.peserta2_name ?? t("bye")}`}
                     />
                 )}
+
+                <PertandinganDetailDialog
+                    open={openDetail}
+                    pertandinganId={detailId}
+                    onClose={handleCloseDetail}
+                />
             </Box>
         </Box>
     );

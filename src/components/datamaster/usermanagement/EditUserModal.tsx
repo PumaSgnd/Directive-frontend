@@ -26,12 +26,15 @@ import { fetchUser, updateUser } from "../../../api/datamaster/user/UserManageme
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
+import { useTranslation } from "react-i18next";
+import { UpdateUserPayload } from "../../../types/user";
 
 export default function EdituserModal() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { sidebarOpen, pageTitle, setPageTitle } = useStore();
   const drawerWidth = sidebarOpen ? 260 : 70;
+  const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = useState(false);
   const [full_name, setName] = useState("");
@@ -43,7 +46,7 @@ export default function EdituserModal() {
   const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
-    setPageTitle("Edit User");
+    setPageTitle(t("editUser"));
     const loaduser = async () => {
       try {
         const data = await fetchUser();
@@ -52,7 +55,7 @@ export default function EdituserModal() {
           setName(found.full_name);
           setUsername(found.username);
           setEmail(found.email);
-          setPassword(found.password);
+          setPassword(found.password || "");
           setRole(found.role);
         } else {
           navigate("/datamaster/usermanagement");
@@ -65,7 +68,7 @@ export default function EdituserModal() {
     };
 
     if (id) loaduser();
-  }, [id, navigate, setPageTitle]);
+  }, [id, t, navigate, setPageTitle]);
 
   useEffect(() => {
     document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
@@ -73,15 +76,14 @@ export default function EdituserModal() {
 
   const handleSave = async () => {
     try {
-
-      const payload: any = {
+      const payload: UpdateUserPayload = {
         full_name,
         username,
         email,
         role
       };
 
-      if (password.trim() !== "") {
+      if (password && password.trim() !== "") {
         payload.password = password;
       }
 
@@ -131,7 +133,7 @@ export default function EdituserModal() {
             {pageTitle}
           </Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <Tooltip title="Fullscreen">
+            <Tooltip title={t("fullscreen")}>
               <IconButton aria-label="Toggle fullscreen" size="medium">
                 <FullscreenIcon fontSize="medium" />
               </IconButton>
@@ -144,11 +146,11 @@ export default function EdituserModal() {
           <CardContent>
             <Box display="flex" flexDirection="column" gap={2} mt={2} ml={4} mr={4}>
               <Typography variant="body2" color="error" mb={2}>
-                Note: (<span style={{ color: "red" }}>*</span>) Required fields
+                {t("requiredNote")}
               </Typography>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Name
+                  {t("name")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 17.7 }}>
                   *
@@ -162,7 +164,7 @@ export default function EdituserModal() {
               </Box>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  username
+                  {t("username")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 14.2 }}>
                   *
@@ -176,7 +178,7 @@ export default function EdituserModal() {
               </Box >
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Email
+                  {t("email")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 18.2 }}>
                   *
@@ -190,7 +192,7 @@ export default function EdituserModal() {
               </Box>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Password
+                  {t("password")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 14.4 }}>
                   *
@@ -217,7 +219,7 @@ export default function EdituserModal() {
               </Box>
               <Box display="flex" alignItems="center">
                 <Typography variant="body1" sx={{ mr: 1 }}>
-                  Role
+                  {t("role")}
                 </Typography>
                 <Typography variant="body1" color="error" sx={{ mr: 19.2 }}>
                   *
@@ -238,10 +240,10 @@ export default function EdituserModal() {
               </Box>
               <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>
                 <Button variant="contained" color="error" onClick={handleSave} aria-label="Save user">
-                  Submit
+                  {t("save")}
                 </Button>
                 <Button variant="contained" color="warning" onClick={() => navigate(-1)} aria-label="Back">
-                  Back
+                  {t("back")}
                 </Button>
               </Box>
             </Box>
@@ -252,11 +254,11 @@ export default function EdituserModal() {
             <DialogTitle>
               <Box display="flex" flexDirection="column" alignItems="center">
                 <CheckCircleIcon sx={{ color: "green", fontSize: 100, my: 2 }} />
-                <Typography variant="h6">Success</Typography>
+                <Typography variant="h6">{t("success")}</Typography>
               </Box>
             </DialogTitle>
             <Typography variant="body1" sx={{ textAlign: "center" }}>
-              User updated successfully!
+              {t("userUpdated")}
             </Typography>
           </DialogContent>
           <DialogActions>
