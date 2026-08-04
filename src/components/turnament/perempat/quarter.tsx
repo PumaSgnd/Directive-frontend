@@ -89,7 +89,7 @@ export default function Quarter() {
     }, []);
 
     useEffect(() => {
-        setPageTitle(t("perempat_final"));
+        setPageTitle(t("perempat"));
     }, [setPageTitle, t]);
 
     useEffect(() => {
