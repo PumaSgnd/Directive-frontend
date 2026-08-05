@@ -22,6 +22,12 @@ import Penyisihan from './components/turnament/penyisihan/Penyisihan';
 import CreatePenyisihan from './components/turnament/penyisihan/CreatePenyisihanModal';
 import Quarter from './components/turnament/perempat/quarter';
 import CreateQuarter from './components/turnament/perempat/CreateQuarterModal';
+import Semi from './components/turnament/semi/Semi';
+import CreateSemi from './components/turnament/semi/CreateSemiModal';
+import Final from './components/turnament/final/Final';
+import CreateFinal from './components/turnament/final/CreateFinalModal';
+import EnambelasBesar from './components/turnament/enambelasbesar/enambelasBesar';
+import CreateEnambelasBesar from './components/turnament/enambelasbesar/CreateEnambelasModal';
 import Score from './components/hitungTurnamen/score/Score';
 import ScoreDetail from './components/hitungTurnamen/score/ScoreDetail';
 
@@ -62,6 +68,12 @@ function App() {
         <Route path="/pertandingan/penyisihan/create-penyisihan" element={<CreatePenyisihan />} />
         <Route path="/pertandingan/perempat-final" element={<Quarter />} />
         <Route path="/pertandingan/perempat-final/create-perempat-final" element={<CreateQuarter />} />
+        <Route path="/pertandingan/semi-final" element={<Semi />} />
+        <Route path="/pertandingan/semi-final/create-semi-final" element={<CreateSemi />} />
+        <Route path="/pertandingan/final" element={<Final />} />
+        <Route path="/pertandingan/final/create-final" element={<CreateFinal />} />
+        <Route path="/pertandingan/enambelasbesar" element={<EnambelasBesar />} />
+        <Route path="/pertandingan/enambelasbesar/create-enambelasbesar" element={<CreateEnambelasBesar />} />
 
         {/* hitungTurnamen */}
         <Route path="/hitungTurnamen/controller" element={<HitungTurnamen />} />

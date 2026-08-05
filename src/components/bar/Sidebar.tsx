@@ -70,6 +70,7 @@ const Sidebar: React.FC = () => {
           { text: "penyisihan", icon: <SportsScore />, path: "/pertandingan/penyisihan" },
           { text: "perempat", icon: <MilitaryTech />, path: "/pertandingan/perempat-final" },
           { text: "semiFinal", icon: <MilitaryTech />, path: "/pertandingan/semi-final" },
+          { text: "enambelasBesar", icon: <EmojiEvents />, path: "/pertandingan/enambelasbesar" },
           { text: "final", icon: <EmojiEvents />, path: "/pertandingan/final" }
         ]
       },
