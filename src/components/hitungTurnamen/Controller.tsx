@@ -39,6 +39,7 @@ import {
 import { JenisPenilaian } from "../../types/penilaian";
 import { Pertandingan } from "../../types/pertandingan";
 import { Scoreboard, ScorePerJuri } from "../../types/penilaian";
+import { useTranslation } from "react-i18next";
 
 const PLUS_JENIS: { label: string; jenis: JenisPenilaian }[] = [
     { label: "1", jenis: "PUKULAN" },
@@ -73,6 +74,8 @@ export default function HitungTurnamen() {
     const { id } = useParams<{ id?: string }>();
     const navigate = useNavigate();
     const pertandinganId = id ? Number(id) : null;
+    const { t } =
+            useTranslation();
 
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const drawerWidth = sidebarOpen ? 260 : 30;
@@ -133,9 +136,8 @@ export default function HitungTurnamen() {
 
     // ================= TITLE =================
     useEffect(() => {
-        setPageTitle("Hitung Turnamen");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        setPageTitle(t("hitungTurnamen"));
+    }, [t, setPageTitle]);
 
     useEffect(() => {
         document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;

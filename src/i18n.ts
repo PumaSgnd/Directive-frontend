@@ -94,6 +94,7 @@ i18n
           // SCORE
           tournamentTitle: "PENCAK SILAT TOURNAMENT",
           scoreboardTitle: "SCORE BOARD",
+          noMatchesFound: "No Matches Yet",
           exitFullscreen: "Exit Fullscreen",
           scorePerJudge: "Score Per Judge",
           noJudgeAssigned: "No judges assigned.",
@@ -108,7 +109,8 @@ i18n
           juri: "Judges",
 
           turnamen: "Tournament",
-          penyisihan: "Qualification",
+          penyisihan: "Qualification Round",
+          enambelasBesar: "Round of 16",
           perempat: "Quarter Final",
           semiFinal: "Semi Final",
           final: "Final",
@@ -200,6 +202,7 @@ i18n
           // SCORE
           tournamentTitle: "TURNAMEN PENCAK SILAT",
           scoreboardTitle: "SCORE BOARD",
+          noMatchesFound: "Belum ada pertandingan",
           exitFullscreen: "Keluar Layar Penuh",
           scorePerJudge: "Perolehan Skor Juri",
           noJudgeAssigned: "Belum ada juri yang ditunjuk.",
@@ -214,6 +217,7 @@ i18n
 
           turnamen: "Turnamen",
           penyisihan: "Babak Penyisihan",
+          enambelasBesar: "Babak 16 Besar",
           perempat: "Perempat Final",
           semiFinal: "Semi Final",
           final: "Final",

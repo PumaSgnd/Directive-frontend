@@ -30,17 +30,17 @@ import {
 
 import { useTranslation } from "react-i18next";
 
-import Sidebar from "../../bar/Sidebar";
-import UserMenu from "../../header/UserMenu";
+import Sidebar from "../bar/Sidebar";
+import UserMenu from "../header/UserMenu";
 
-import { useStore } from "../../../hooks/useStore";
-import { usePertandingan } from "../../../hooks/usePertandingan";
+import { useStore } from "../../hooks/useStore";
+import { usePertandingan } from "../../hooks/usePertandingan";
 
 import {
     fetchScoreboard,
-} from "../../../api/turnament/penilaian/penilaian";
+} from "../../api/turnament/penilaian/penilaian";
 
-import PaginationActions from "../../custom/PaginationActions";
+import PaginationActions from "../custom/PaginationActions";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -65,7 +65,7 @@ export default function Score() {
     const {
         pertandingan,
         loading,
-    } = usePertandingan("penyisihan");
+    } = usePertandingan("final");
 
     const [search, setSearch] =
         useState("");

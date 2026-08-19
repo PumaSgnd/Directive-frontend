@@ -89,7 +89,7 @@ export default function SixteenBesar() {
     }, []);
 
     useEffect(() => {
-        setPageTitle(t("perempat"));
+        setPageTitle(t("enambelasBesar"));
     }, [setPageTitle, t]);
 
     useEffect(() => {

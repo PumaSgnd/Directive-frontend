@@ -15,7 +15,7 @@ const REFRESH_WINDOW_END = 14 * 60 * 60 * 1000;    // 14 jam (ms)
 
 export const useSessionManager = () => {
     const navigate = useNavigate();
-    const { setUser } = useStore();
+    const { clearUser } = useStore();
 
     const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
     const logoutTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
@@ -27,9 +27,12 @@ export const useSessionManager = () => {
 
     const logout = () => {
         clearTimers();
+
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        setUser(null);
+
+        clearUser();
+
         navigate("/login");
     };
 

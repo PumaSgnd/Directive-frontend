@@ -48,7 +48,7 @@ export default function Final() {
         setSelectedPertandingan,
     } = usePertandinganStore();
 
-    const { loading, removePertandingan } = usePertandingan("perempat_final");
+    const { loading, removePertandingan } = usePertandingan("final");
 
     const drawerWidth = sidebarOpen ? 260 : 70;
     const { t } = useTranslation();
@@ -89,7 +89,7 @@ export default function Final() {
     }, []);
 
     useEffect(() => {
-        setPageTitle(t("perempat"));
+        setPageTitle(t("final"));
     }, [setPageTitle, t]);
 
     useEffect(() => {

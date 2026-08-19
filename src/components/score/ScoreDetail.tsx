@@ -29,20 +29,20 @@ import { useTranslation } from "react-i18next";
 
 import {
     fetchPertandinganById,
-} from "../../../api/turnament/pertandingan/pertandingan";
+} from "../../api/turnament/pertandingan/pertandingan";
 
 import {
     fetchScoreboard,
     fetchScorePerJuri,
-} from "../../../api/turnament/penilaian/penilaian";
+} from "../../api/turnament/penilaian/penilaian";
 
-import { Pertandingan } from "../../../types/pertandingan";
+import { Pertandingan } from "../../types/pertandingan";
 
 import {
     Scoreboard,
     ScorePerJuri,
-} from "../../../types/penilaian";
-import LanguageMenu from "../../header/LanguageMenu";
+} from "../../types/penilaian";
+import LanguageMenu from "../header/LanguageMenu";
 
 const POLL_INTERVAL_MS = 1000;
 

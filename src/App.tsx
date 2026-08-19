@@ -28,8 +28,13 @@ import Final from './components/turnament/final/Final';
 import CreateFinal from './components/turnament/final/CreateFinalModal';
 import EnambelasBesar from './components/turnament/enambelasbesar/enambelasBesar';
 import CreateEnambelasBesar from './components/turnament/enambelasbesar/CreateEnambelasModal';
-import Score from './components/hitungTurnamen/score/Score';
-import ScoreDetail from './components/hitungTurnamen/score/ScoreDetail';
+import ScoreDetail from './components/score/ScoreDetail';
+import Scorepenyisihan from './components/score/Scorepenyisihan';
+import Score16Besar from './components/score/Score16Besar';
+import Scorefinal from './components/score/Scorefinal';
+import Scoreperempat from './components/score/Scoreperempat';
+import ScoresemiFinal from './components/score/ScoresemiFinal';
+import Profile from './components/profile/profile';
 
 function App() {
   return (
@@ -78,8 +83,17 @@ function App() {
         {/* hitungTurnamen */}
         <Route path="/hitungTurnamen/controller" element={<HitungTurnamen />} />
         <Route path="/hitungTurnamen/controller/:id" element={<HitungTurnamen />} />
-        <Route path="/hitungTurnamen/skor" element={<Score />} />
-        <Route path="/hitungTurnamen/skor/:id" element={<ScoreDetail />} />
+
+        {/* skor */}
+        <Route path="/skor/penyisihan" element={<Scorepenyisihan />} />
+        <Route path="/skor/enambelasBesar" element={<Score16Besar />} />
+        <Route path="/skor/perempat-final" element={<Scoreperempat />} />
+        <Route path="/skor/semi-final" element={<ScoresemiFinal />} />
+        <Route path="/skor/final" element={<Scorefinal />} />
+        <Route path="/skor/:id" element={<ScoreDetail />} />
+
+        {/* profile */}
+        <Route path="/profile" element={<Profile />} />
 
         {/* menu sedang proses */}
         <Route path="/datamaster/category-discipline" element={<BlankPage />} />

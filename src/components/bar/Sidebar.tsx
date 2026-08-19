@@ -21,8 +21,8 @@ import {
   EmojiEvents,
   SportsScore,
   MilitaryTech,
-  History,
-  ManageAccounts
+  ManageAccounts,
+  Scoreboard
 } from "@mui/icons-material";
 import directiveLogo from "../../assets/direc.png";
 import Logo from "../../assets/logo.png";
@@ -68,21 +68,25 @@ const Sidebar: React.FC = () => {
         icon: <EmojiEvents />,
         children: [
           { text: "penyisihan", icon: <SportsScore />, path: "/pertandingan/penyisihan" },
+          { text: "enambelasBesar", icon: <EmojiEvents />, path: "/pertandingan/enambelasbesar" },
           { text: "perempat", icon: <MilitaryTech />, path: "/pertandingan/perempat-final" },
           { text: "semiFinal", icon: <MilitaryTech />, path: "/pertandingan/semi-final" },
-          { text: "enambelasBesar", icon: <EmojiEvents />, path: "/pertandingan/enambelasbesar" },
           { text: "final", icon: <EmojiEvents />, path: "/pertandingan/final" }
         ]
       },
+      { text: "hitungTurnamen", icon: <Calculate />, path: "/hitungTurnamen/controller" },
       {
-        text: "hitungTurnamen",
-        icon: <Calculate />,
+        text: "skor",
+        icon: <Scoreboard />,
         children: [
-          { text: "controller", icon: <Calculate />, path: "/hitungTurnamen/controller" },
-          { text: "skor", icon: <SportsScore />, path: "/hitungTurnamen/skor" },
-          { text: "history", icon: <History />, path: "/hitungTurnamen/history" }
+          { text: "penyisihan", icon: <SportsScore />, path: "/skor/penyisihan" },
+          { text: "enambelasBesar", icon: <EmojiEvents />, path: "/skor/enambelasbesar" },
+          { text: "perempat", icon: <MilitaryTech />, path: "/skor/perempat-final" },
+          { text: "semiFinal", icon: <MilitaryTech />, path: "/skor/semi-final" },
+          { text: "final", icon: <EmojiEvents />, path: "/skor/final" }
         ]
       }
+      // { text: "skor", icon: <Scoreboard />, path: "/hitungTurnamen/skor" }
     ],
     []
   );

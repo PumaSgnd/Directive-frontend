@@ -6,7 +6,7 @@ export interface JuriPertandingan {
 
 export interface Pertandingan {
     id: number;
-    babak: "penyisihan" | "perempat_final" | "semi_final" | "final" | "16_besar";
+    babak: "penyisihan" | 'enam_belas_besar' | "perempat_final" | "semi_final" | "final";
     status: "belum_mulai" | "berlangsung" | "pause" | "selesai";
     durasi_menit: number;
     sisa_detik: number | null;
