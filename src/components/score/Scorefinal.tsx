@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
+import { useNavigate } from "react-router-dom";
 import {
     Box,
     Card,
@@ -19,13 +19,15 @@ import {
     MenuItem,
     TablePagination,
     Chip,
+    Button,
 } from "@mui/material";
 
 import {
     Fullscreen,
     FullscreenExit,
     Search,
-    Monitor
+    Monitor,
+    Add,
 } from "@mui/icons-material";
 
 import { useTranslation } from "react-i18next";
@@ -52,6 +54,7 @@ type MatchScore = {
 export default function Score() {
 
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
     const {
         sidebarOpen,
@@ -102,10 +105,9 @@ export default function Score() {
 
     useEffect(() => {
         document.title =
-            `${t("tournamentTitle")}${
-                pageTitle
-                    ? " | " + pageTitle
-                    : ""
+            `${t("tournamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
             }`;
     }, [
         pageTitle,
@@ -369,7 +371,7 @@ export default function Score() {
             return filteredMatches.slice(
                 start,
                 start +
-                    rowsPerPage
+                rowsPerPage
             );
         }, [
             filteredMatches,
@@ -486,10 +488,10 @@ export default function Score() {
                                 }
                                 sx={{
                                     "&:hover":
-                                        {
-                                            backgroundColor:
-                                                "transparent",
-                                        },
+                                    {
+                                        backgroundColor:
+                                            "transparent",
+                                    },
                                 }}
                             >
                                 {isFullscreen ? (
@@ -526,11 +528,11 @@ export default function Score() {
                             setStatusFilter(
                                 e.target
                                     .value as
-                                    | "semua"
-                                    | "belum_mulai"
-                                    | "berlangsung"
-                                    | "pause"
-                                    | "selesai"
+                                | "semua"
+                                | "belum_mulai"
+                                | "berlangsung"
+                                | "pause"
+                                | "selesai"
                             )
                         }
                         sx={{
@@ -638,7 +640,7 @@ export default function Score() {
 
                                 <TableBody>
                                     {paginatedMatches.length ===
-                                    0 ? (
+                                        0 ? (
                                         <TableRow>
                                             <TableCell
                                                 colSpan={
@@ -790,10 +792,10 @@ export default function Score() {
                                                                     }
                                                                     sx={{
                                                                         "&:hover":
-                                                                            {
-                                                                                backgroundColor:
-                                                                                    "transparent",
-                                                                            },
+                                                                        {
+                                                                            backgroundColor:
+                                                                                "transparent",
+                                                                        },
                                                                     }}
                                                                 >
                                                                     <Monitor />
@@ -811,62 +813,48 @@ export default function Score() {
 
                         <Box
                             display="flex"
-                            justifyContent="flex-end"
-                            mt={3}
+                            justifyContent="space-between"
+                            alignItems="center"
+                            mt={5}
+                            mb={2}
                         >
                             <TablePagination
                                 component="div"
-                                count={
-                                    filteredMatches.length
-                                }
+                                count={filteredMatches.length}
                                 page={page}
-                                onPageChange={(
-                                    _event,
-                                    newPage
-                                ) =>
-                                    setPage(
-                                        newPage
-                                    )
-                                }
-                                rowsPerPage={
-                                    rowsPerPage
-                                }
-                                onRowsPerPageChange={(
-                                    event
-                                ) => {
+                                onPageChange={(event, newPage) => setPage(newPage)}
+                                rowsPerPage={rowsPerPage}
+                                onRowsPerPageChange={(event) => {
                                     setRowsPerPage(
-                                        parseInt(
-                                            event
-                                                .target
-                                                .value,
-                                            10
-                                        )
+                                        parseInt(event.target.value, 10)
                                     );
-
                                     setPage(0);
                                 }}
-                                rowsPerPageOptions={[
-                                    5,
-                                    10,
-                                    25,
-                                    50,
-                                ]}
-                                labelDisplayedRows={({
-                                    from,
-                                    to,
-                                    count,
-                                }) =>
-                                    `${from}-${to} ${t(
-                                        "of"
-                                    )} ${count}`
+                                rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                                labelDisplayedRows={({ from, to, count }) =>
+                                    `${from}-${to} of ${count}`
                                 }
-                                labelRowsPerPage={t(
-                                    "rowsPerPage"
-                                )}
-                                ActionsComponent={
-                                    PaginationActions
-                                }
+                                labelRowsPerPage={t("rows")}
+                                ActionsComponent={PaginationActions}
+                                sx={{
+                                    "& .MuiTablePagination-select": {
+                                        border: "1px solid #ccc",
+                                    },
+                                }}
                             />
+
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<Add />}
+                                onClick={() =>
+                                    navigate(
+                                        "/pertandingan/perempat-final/create-perempat-final"
+                                    )
+                                }
+                            >
+                                {t("create")}
+                            </Button>
                         </Box>
                     </CardContent>
                 </Card>

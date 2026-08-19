@@ -7,8 +7,13 @@ import {
     Card,
     CardContent,
     CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     Divider,
     IconButton,
+    Slider,
     Stack,
     TextField,
     Tooltip,
@@ -26,7 +31,10 @@ import {
     Person,
     PhotoCamera,
     Save,
+    ZoomIn,
 } from "@mui/icons-material";
+
+import Cropper from "react-easy-crop";
 
 import Sidebar from "../bar/Sidebar";
 import UserMenu from "../header/UserMenu";
@@ -35,9 +43,7 @@ import { useStore } from "../../hooks/useStore";
 import { useProfile } from "../../hooks/useProfile";
 import { useTranslation } from "react-i18next";
 
-
 const BACKEND_URL = "http://localhost:5000";
-
 
 const getPhotoUrl = (
     photo: string | null
@@ -49,7 +55,6 @@ const getPhotoUrl = (
     return `${BACKEND_URL}/uploads/userphoto/${photo}`;
 };
 
-
 const capitalizeWords = (
     value: string
 ) => {
@@ -59,6 +64,78 @@ const capitalizeWords = (
     );
 };
 
+const createCroppedImage = (
+    imageSrc: string,
+    pixelCrop: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    }
+): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+
+        image.onload = () => {
+            const canvas = document.createElement(
+                "canvas"
+            );
+
+            canvas.width = pixelCrop.width;
+            canvas.height = pixelCrop.height;
+
+            const ctx = canvas.getContext("2d");
+
+            if (!ctx) {
+                reject(
+                    new Error(
+                        "Canvas tidak tersedia."
+                    )
+                );
+
+                return;
+            }
+
+            ctx.drawImage(
+                image,
+                pixelCrop.x,
+                pixelCrop.y,
+                pixelCrop.width,
+                pixelCrop.height,
+                0,
+                0,
+                pixelCrop.width,
+                pixelCrop.height
+            );
+
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(
+                            new Error(
+                                "Gagal membuat gambar hasil crop."
+                            )
+                        );
+                    }
+                },
+                "image/jpeg",
+                0.92
+            );
+        };
+
+        image.onerror = () => {
+            reject(
+                new Error(
+                    "Gagal memuat gambar."
+                )
+            );
+        };
+
+        image.src = imageSrc;
+    });
+};
 
 const Profile = () => {
     const {
@@ -78,97 +155,103 @@ const Profile = () => {
 
     const { t } = useTranslation();
 
-
     const drawerWidth =
         sidebarOpen ? 260 : 70;
-
 
     const [
         isFullscreen,
         setIsFullscreen
     ] = useState(false);
 
-
     const [
         isEditing,
         setIsEditing
     ] = useState(false);
-
 
     const [
         fullName,
         setFullName
     ] = useState("");
 
-
     const [
         username,
         setUsername
     ] = useState("");
-
 
     const [
         email,
         setEmail
     ] = useState("");
 
-
     const [
         photoFile,
         setPhotoFile
     ] = useState<File | null>(null);
-
 
     const [
         photoPreview,
         setPhotoPreview
     ] = useState<string | null>(null);
 
-
     const [
         formError,
         setFormError
     ] = useState("");
 
+    const [
+        cropOpen,
+        setCropOpen
+    ] = useState(false);
+
+    const [
+        crop,
+        setCrop
+    ] = useState({
+        x: 0,
+        y: 0,
+    });
+
+    const [
+        zoom,
+        setZoom
+    ] = useState(1);
+
+    const [
+        croppedAreaPixels,
+        setCroppedAreaPixels
+    ] = useState<{
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    } | null>(null);
+
+    const [
+        cropImage,
+        setCropImage
+    ] = useState<string | null>(null);
 
     const fileInputRef =
         useRef<HTMLInputElement | null>(null);
 
-
-    /*
-     * LOAD PROFILE
-     */
     useEffect(() => {
-
         loadProfile().catch(() => {});
 
         setPageTitle(
             t("profile")
         );
-
     }, [t]);
 
-
-    /*
-     * DOCUMENT TITLE
-     */
     useEffect(() => {
-
         document.title =
             `Turnament Pencak Silat${
                 pageTitle
                     ? " | " + pageTitle
                     : ""
             }`;
-
     }, [pageTitle]);
 
-
-    /*
-     * ISI FORM DARI PROFILE
-     */
     useEffect(() => {
-
         if (!profile) {
             return;
         }
@@ -188,51 +271,27 @@ const Profile = () => {
         setPhotoPreview(
             getPhotoUrl(
                 profile.photo
-            )
-            || null
+            ) || null
         );
-
     }, [profile]);
 
-
-    /*
-     * FULLSCREEN
-     */
     const toggleFullscreen = () => {
-
         if (!document.fullscreenElement) {
-
-            document.documentElement
-                .requestFullscreen();
-
+            document.documentElement.requestFullscreen();
             setIsFullscreen(true);
-
         } else {
-
             if (document.exitFullscreen) {
-
                 document.exitFullscreen();
-
                 setIsFullscreen(false);
-
             }
-
         }
-
     };
 
-
-    /*
-     * DETECT FULLSCREEN CHANGE
-     */
     useEffect(() => {
-
         const handleChange = () => {
-
             setIsFullscreen(
                 !!document.fullscreenElement
             );
-
         };
 
         document.addEventListener(
@@ -241,22 +300,14 @@ const Profile = () => {
         );
 
         return () => {
-
             document.removeEventListener(
                 "fullscreenchange",
                 handleChange
             );
-
         };
-
     }, []);
 
-
-    /*
-     * EDIT PROFILE
-     */
     const handleEdit = () => {
-
         if (!profile) {
             return;
         }
@@ -284,15 +335,9 @@ const Profile = () => {
         setFormError("");
 
         setIsEditing(true);
-
     };
 
-
-    /*
-     * CANCEL
-     */
     const handleCancel = () => {
-
         if (!profile) {
             return;
         }
@@ -321,16 +366,23 @@ const Profile = () => {
 
         setIsEditing(false);
 
+        if (cropImage) {
+            URL.revokeObjectURL(cropImage);
+        }
+
+        setCropImage(null);
+        setCropOpen(false);
+        setZoom(1);
+        setCrop({
+            x: 0,
+            y: 0,
+        });
+        setCroppedAreaPixels(null);
     };
 
-
-    /*
-     * PILIH FOTO
-     */
     const handlePhotoChange = (
         event: React.ChangeEvent<HTMLInputElement>
     ) => {
-
         const file =
             event.target.files?.[0];
 
@@ -338,103 +390,180 @@ const Profile = () => {
             return;
         }
 
-
         const allowedTypes = [
             "image/png",
             "image/jpeg",
         ];
 
-
-        if (
-            !allowedTypes.includes(
-                file.type
-            )
-        ) {
-
+        if (!allowedTypes.includes(file.type)) {
             setFormError(
                 "Foto harus berformat PNG, JPG, atau JPEG."
             );
 
+            event.target.value = "";
+
             return;
-
         }
-
 
         const maxSize =
             5 * 1024 * 1024;
 
-
         if (file.size > maxSize) {
-
             setFormError(
                 "Ukuran foto maksimal 5 MB."
             );
 
-            return;
+            event.target.value = "";
 
+            return;
         }
 
-
         setFormError("");
-
-        setPhotoFile(file);
-
 
         const previewUrl =
             URL.createObjectURL(file);
 
-        setPhotoPreview(
-            previewUrl
-        );
+        setCropImage(previewUrl);
 
+        setCrop({
+            x: 0,
+            y: 0,
+        });
+
+        setZoom(1);
+
+        setCroppedAreaPixels(null);
+
+        setCropOpen(true);
+
+        event.target.value = "";
     };
 
+    const handleCropComplete = (
+        _croppedArea: any,
+        croppedAreaPixels: {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        }
+    ) => {
+        setCroppedAreaPixels(
+            croppedAreaPixels
+        );
+    };
 
-    /*
-     * SIMPAN PROFILE
-     */
+    const handleCropConfirm = async () => {
+        if (
+            !cropImage ||
+            !croppedAreaPixels
+        ) {
+            return;
+        }
+
+        try {
+            const croppedBlob =
+                await createCroppedImage(
+                    cropImage,
+                    croppedAreaPixels
+                );
+
+            const croppedFile =
+                new File(
+                    [croppedBlob],
+                    "profile.jpg",
+                    {
+                        type: "image/jpeg",
+                    }
+                );
+
+            const croppedPreview =
+                URL.createObjectURL(
+                    croppedBlob
+                );
+
+            setPhotoFile(
+                croppedFile
+            );
+
+            setPhotoPreview(
+                croppedPreview
+            );
+
+            URL.revokeObjectURL(
+                cropImage
+            );
+
+            setCropImage(null);
+            setCropOpen(false);
+
+            setZoom(1);
+
+            setCrop({
+                x: 0,
+                y: 0,
+            });
+
+            setCroppedAreaPixels(null);
+        } catch (error) {
+            console.error(error);
+
+            setFormError(
+                "Gagal memproses foto."
+            );
+        }
+    };
+
+    const handleCropCancel = () => {
+        if (cropImage) {
+            URL.revokeObjectURL(
+                cropImage
+            );
+        }
+
+        setCropImage(null);
+
+        setCropOpen(false);
+
+        setZoom(1);
+
+        setCrop({
+            x: 0,
+            y: 0,
+        });
+
+        setCroppedAreaPixels(null);
+    };
+
     const handleSave = async () => {
-
         setFormError("");
 
-
         if (!fullName.trim()) {
-
             setFormError(
                 "Nama lengkap wajib diisi."
             );
 
             return;
-
         }
 
-
         if (!username.trim()) {
-
             setFormError(
                 "Username wajib diisi."
             );
 
             return;
-
         }
 
-
         if (!email.trim()) {
-
             setFormError(
                 "Email wajib diisi."
             );
 
             return;
-
         }
 
-
         try {
-
             await saveProfile({
-
                 full_name:
                     fullName.trim(),
 
@@ -446,36 +575,25 @@ const Profile = () => {
 
                 photo:
                     photoFile,
-
             });
-
 
             setIsEditing(false);
 
             setPhotoFile(null);
-
         } catch (error: any) {
-
             console.error(error);
 
             setFormError(
                 error?.response?.data?.message ||
                 "Gagal memperbarui profile."
             );
-
         }
-
     };
 
-
-    /*
-     * LOADING
-     */
     if (
         loading &&
         !profile
     ) {
-
         return (
             <Box
                 display="flex"
@@ -486,12 +604,9 @@ const Profile = () => {
                 <CircularProgress />
             </Box>
         );
-
     }
 
-
     return (
-
         <Box
             sx={{
                 display: "flex",
@@ -501,9 +616,6 @@ const Profile = () => {
                 overflowX: "hidden",
             }}
         >
-
-            {/* SIDEBAR */}
-
             <Box
                 sx={{
                     width: drawerWidth,
@@ -513,13 +625,8 @@ const Profile = () => {
                     height: "100vh",
                 }}
             >
-
                 <Sidebar />
-
             </Box>
-
-
-            {/* MAIN CONTENT */}
 
             <Box
                 flexGrow={1}
@@ -531,16 +638,12 @@ const Profile = () => {
                         "margin-left 0.3s",
                 }}
             >
-
-                {/* HEADER */}
-
                 <Box
                     display="flex"
                     justifyContent="space-between"
                     alignItems="center"
                     mb={3}
                 >
-
                     <Typography
                         variant="h2"
                         fontWeight={600}
@@ -549,17 +652,14 @@ const Profile = () => {
                         {pageTitle}
                     </Typography>
 
-
                     <Box
                         display="flex"
                         alignItems="center"
                         gap={1}
                     >
-
                         <Tooltip
                             title={t("fullscreen")}
                         >
-
                             <IconButton
                                 size="medium"
                                 aria-label="Toggle fullscreen view"
@@ -567,37 +667,23 @@ const Profile = () => {
                                     toggleFullscreen
                                 }
                             >
-
                                 {isFullscreen ? (
-
                                     <FullscreenExit
                                         fontSize="medium"
                                     />
-
                                 ) : (
-
                                     <Fullscreen
                                         fontSize="medium"
                                     />
-
                                 )}
-
                             </IconButton>
-
                         </Tooltip>
 
-
                         <UserMenu />
-
                     </Box>
-
                 </Box>
 
-
                 <Divider />
-
-
-                {/* PROFILE CONTENT */}
 
                 <Box
                     sx={{
@@ -606,7 +692,6 @@ const Profile = () => {
                         mx: "auto",
                     }}
                 >
-
                     <Card
                         elevation={0}
                         sx={{
@@ -617,7 +702,6 @@ const Profile = () => {
                             borderRadius: 3,
                         }}
                     >
-
                         <CardContent
                             sx={{
                                 p: {
@@ -627,9 +711,6 @@ const Profile = () => {
                                 },
                             }}
                         >
-
-                            {/* PROFILE HEADER */}
-
                             <Stack
                                 direction={{
                                     xs: "column",
@@ -641,16 +722,12 @@ const Profile = () => {
                                 }}
                                 spacing={3}
                             >
-
-                                {/* FOTO */}
-
                                 <Box
                                     sx={{
                                         position:
                                             "relative",
                                     }}
                                 >
-
                                     <Avatar
                                         src={
                                             photoPreview ||
@@ -669,7 +746,6 @@ const Profile = () => {
                                             fontSize: 48,
                                         }}
                                     >
-
                                         {!photoPreview &&
                                             !profile?.photo && (
                                                 <Person
@@ -678,12 +754,9 @@ const Profile = () => {
                                                     }}
                                                 />
                                             )}
-
                                     </Avatar>
 
-
                                     {isEditing && (
-
                                         <>
                                             <IconButton
                                                 onClick={() =>
@@ -700,7 +773,6 @@ const Profile = () => {
                                                         "primary.main",
                                                     color:
                                                         "white",
-
                                                     "&:hover":
                                                         {
                                                             backgroundColor:
@@ -708,11 +780,8 @@ const Profile = () => {
                                                         },
                                                 }}
                                             >
-
                                                 <PhotoCamera />
-
                                             </IconButton>
-
 
                                             <input
                                                 ref={
@@ -720,20 +789,14 @@ const Profile = () => {
                                                 }
                                                 type="file"
                                                 hidden
-                                                accept=".png,.jpg,.jpeg"
+                                                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
                                                 onChange={
                                                     handlePhotoChange
                                                 }
                                             />
-
                                         </>
-
                                     )}
-
                                 </Box>
-
-
-                                {/* NAMA + ROLE */}
 
                                 <Box
                                     flex={1}
@@ -742,7 +805,6 @@ const Profile = () => {
                                         sm: "left",
                                     }}
                                 >
-
                                     <Typography
                                         variant="h5"
                                         fontWeight={700}
@@ -752,7 +814,6 @@ const Profile = () => {
                                             "Unknown User"
                                         }
                                     </Typography>
-
 
                                     <Typography
                                         variant="body1"
@@ -767,7 +828,6 @@ const Profile = () => {
                                             "username"
                                         }
                                     </Typography>
-
 
                                     <Box
                                         sx={{
@@ -784,7 +844,6 @@ const Profile = () => {
                                                 "action.hover",
                                         }}
                                     >
-
                                         <Badge
                                             fontSize="small"
                                             color="action"
@@ -799,16 +858,10 @@ const Profile = () => {
                                                 "unknown"
                                             )}
                                         </Typography>
-
                                     </Box>
-
                                 </Box>
 
-
-                                {/* EDIT BUTTON */}
-
                                 {!isEditing && (
-
                                     <Button
                                         variant="contained"
                                         startIcon={
@@ -820,20 +873,14 @@ const Profile = () => {
                                     >
                                         Edit Profile
                                     </Button>
-
                                 )}
-
                             </Stack>
-
 
                             <Divider
                                 sx={{
                                     my: 4,
                                 }}
                             />
-
-
-                            {/* INFORMASI PROFILE */}
 
                             <Typography
                                 variant="h6"
@@ -845,13 +892,9 @@ const Profile = () => {
                                 Informasi Profile
                             </Typography>
 
-
                             <Stack
                                 spacing={2.5}
                             >
-
-                                {/* FULL NAME */}
-
                                 <TextField
                                     fullWidth
                                     label="Nama Lengkap"
@@ -880,9 +923,6 @@ const Profile = () => {
                                     }}
                                 />
 
-
-                                {/* USERNAME */}
-
                                 <TextField
                                     fullWidth
                                     label="Username"
@@ -910,9 +950,6 @@ const Profile = () => {
                                             ),
                                     }}
                                 />
-
-
-                                {/* EMAIL */}
 
                                 <TextField
                                     fullWidth
@@ -943,9 +980,6 @@ const Profile = () => {
                                     }}
                                 />
 
-
-                                {/* ROLE */}
-
                                 <TextField
                                     fullWidth
                                     label="Role"
@@ -969,15 +1003,10 @@ const Profile = () => {
                                             ),
                                     }}
                                 />
-
                             </Stack>
-
-
-                            {/* ERROR */}
 
                             {(formError ||
                                 error) && (
-
                                 <Typography
                                     color="error"
                                     variant="body2"
@@ -990,14 +1019,9 @@ const Profile = () => {
                                         error
                                     }
                                 </Typography>
-
                             )}
 
-
-                            {/* ACTION */}
-
                             {isEditing && (
-
                                 <Stack
                                     direction={{
                                         xs: "column-reverse",
@@ -1009,7 +1033,6 @@ const Profile = () => {
                                         mt: 3,
                                     }}
                                 >
-
                                     <Button
                                         variant="outlined"
                                         color="inherit"
@@ -1025,7 +1048,6 @@ const Profile = () => {
                                     >
                                         Batal
                                     </Button>
-
 
                                     <Button
                                         variant="contained"
@@ -1050,23 +1072,174 @@ const Profile = () => {
                                             ? "Menyimpan..."
                                             : "Simpan Perubahan"}
                                     </Button>
-
                                 </Stack>
-
                             )}
-
                         </CardContent>
-
                     </Card>
-
                 </Box>
-
             </Box>
 
+            <Dialog
+                open={cropOpen}
+                onClose={
+                    handleCropCancel
+                }
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    Sesuaikan Foto Profile
+                </DialogTitle>
+
+                <DialogContent>
+                    <Box
+                        sx={{
+                            position:
+                                "relative",
+                            width: "100%",
+                            height: {
+                                xs: 320,
+                                sm: 400,
+                            },
+                            backgroundColor:
+                                "#111",
+                            overflow:
+                                "hidden",
+                            borderRadius: 2,
+                        }}
+                    >
+                        {cropImage && (
+                            <Cropper
+                                image={
+                                    cropImage
+                                }
+                                crop={
+                                    crop
+                                }
+                                zoom={
+                                    zoom
+                                }
+                                aspect={1}
+                                cropShape="round"
+                                showGrid={
+                                    false
+                                }
+                                onCropChange={
+                                    setCrop
+                                }
+                                onZoomChange={
+                                    setZoom
+                                }
+                                onCropComplete={
+                                    handleCropComplete
+                                }
+                            />
+                        )}
+                    </Box>
+
+                    <Box
+                        sx={{
+                            mt: 3,
+                            px: 2,
+                        }}
+                    >
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={2}
+                        >
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                            >
+                                Zoom
+                            </Typography>
+
+                            <ZoomIn
+                                fontSize="small"
+                                color="action"
+                            />
+
+                            <Slider
+                                value={
+                                    zoom
+                                }
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                onChange={(
+                                    _event,
+                                    value
+                                ) =>
+                                    setZoom(
+                                        value as number
+                                    )
+                                }
+                                sx={{
+                                    flex: 1,
+                                }}
+                            />
+
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                    minWidth: 35,
+                                    textAlign:
+                                        "right",
+                                }}
+                            >
+                                {zoom.toFixed(
+                                    1
+                                )}
+                                x
+                            </Typography>
+                        </Stack>
+                    </Box>
+
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            mt: 2,
+                            textAlign:
+                                "center",
+                        }}
+                    >
+                        Geser foto untuk
+                        menentukan bagian
+                        yang ingin digunakan.
+                    </Typography>
+                </DialogContent>
+
+                <DialogActions
+                    sx={{
+                        px: 3,
+                        pb: 2,
+                    }}
+                >
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={
+                            handleCropCancel
+                        }
+                    >
+                        Batal
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        onClick={
+                            handleCropConfirm
+                        }
+                    >
+                        Gunakan Foto
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
-
     );
-}
-
+};
 
 export default Profile;
