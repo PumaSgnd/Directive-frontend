@@ -98,7 +98,6 @@ const Sidebar: React.FC = () => {
 
   const handleToggleMenu = (menuText: string) => {
     setOpenMenus(prev => ({
-      ...prev,
       [menuText]: !prev[menuText]
     }));
   };
@@ -171,7 +170,7 @@ const Sidebar: React.FC = () => {
           </ListItemButton>
 
           {hasChildren && (
-            <Collapse in={isOpen} timeout="auto" unmountOnExit>
+            <Collapse in={isOpen} timeout={0} unmountOnExit>
               <List component="div" disablePadding>
                 {renderMenuItems(item.children!, level + 1)}
               </List>

@@ -285,17 +285,12 @@ export default function ScoreDetail() {
             <Box
                 sx={{
                     minHeight: "100vh",
-                    background: "#0f172a",
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
+                    alignItems: "center",
                 }}
             >
-                <CircularProgress
-                    sx={{
-                        color: "#fff",
-                    }}
-                />
+                <CircularProgress />
             </Box>
         );
     }

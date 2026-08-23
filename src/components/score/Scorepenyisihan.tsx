@@ -86,7 +86,7 @@ export default function Score() {
         useState(0);
 
     const [rowsPerPage, setRowsPerPage] =
-        useState(10);
+        useState(5);
 
     const [isFullscreen, setIsFullscreen] =
         useState(false);
@@ -390,13 +390,10 @@ export default function Score() {
         return (
             <Box
                 sx={{
-                    minHeight:
-                        "100vh",
+                    minHeight: "100vh",
                     display: "flex",
-                    alignItems:
-                        "center",
-                    justifyContent:
-                        "center",
+                    justifyContent: "center",
+                    alignItems: "center",
                 }}
             >
                 <CircularProgress />
@@ -408,25 +405,17 @@ export default function Score() {
         <Box
             sx={{
                 display: "flex",
-                minHeight:
-                    "100vh",
-                width: "100vw",
-                overflowX:
-                    "hidden",
-                background:
-                    "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+                width: "100%",
+                minHeight: "100vh",
             }}
         >
             <Box
                 sx={{
-                    width:
-                        drawerWidth,
-                    transition:
-                        "width 0.3s",
-                    position:
-                        "fixed",
-                    height:
-                        "100vh",
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: drawerWidth,
+                    height: "100vh",
                     zIndex: 1200,
                 }}
             >
@@ -434,12 +423,24 @@ export default function Score() {
             </Box>
 
             <Box
-                flexGrow={1}
-                ml={`${drawerWidth}px`}
-                p={3}
-                fontFamily="Roboto, sans-serif"
                 sx={{
-                    minWidth: 0,
+                    position: "absolute",
+                    top: 0,
+                    left: `${drawerWidth}px`,
+                    right: 0,
+                    minHeight: "100vh",
+                    boxSizing: "border-box",
+                    p: 3,
+
+                    fontFamily: "Roboto, sans-serif",
+                    transition: "margin-left 0.3s, width 0.3s",
+                    background:
+                        "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+                    color: "black",
+
+                    // HILANGKAN SCROLL X & Y
+                    overflowX: "hidden",
+                    overflowY: "hidden",
                 }}
             >
                 <Box

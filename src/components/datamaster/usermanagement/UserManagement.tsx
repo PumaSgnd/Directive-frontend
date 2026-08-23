@@ -152,23 +152,60 @@ export default function UserManagement() {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" mt={10}>
-                <CircularProgress role="progressbar" aria-label="Loading User..." />
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                }}
+            >
+                <CircularProgress />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
-            <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
+        <Box
+            sx={{
+                display: "flex",
+                width: "100%",
+                minHeight: "100vh",
+            }}
+        >
+            <Box
+                sx={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: drawerWidth,
+                    height: "100vh",
+                    zIndex: 1200,
+                }}
+            >
                 <Sidebar />
             </Box>
+
             <Box
-                flexGrow={1}
-                ml={`${drawerWidth}px`}
-                padding={3}
-                fontFamily="Roboto, sans-serif"
-                bgcolor="linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)"
+                sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: `${drawerWidth}px`,
+                    right: 0,
+                    minHeight: "100vh",
+                    boxSizing: "border-box",
+                    p: 3,
+
+                    fontFamily: "Roboto, sans-serif",
+                    transition: "margin-left 0.3s, width 0.3s",
+                    background:
+                        "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+                    color: "black",
+
+                    // HILANGKAN SCROLL X & Y
+                    overflowX: "hidden",
+                    overflowY: "hidden",
+                }}
             >
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Typography variant="h2" fontWeight={600} fontSize={26}>
@@ -194,6 +231,9 @@ export default function UserManagement() {
                     justifyContent="space-between"
                     alignItems="center"
                     mt={5}
+                    sx={{
+                        flexWrap: "wrap",
+                    }}
                 >
                     <TextField
                         select
@@ -314,18 +354,20 @@ export default function UserManagement() {
                         </Box>
                     </CardContent>
                 </Card>
-                {selectedUser && (
-                    <DeleteUserDialog
-                        open={openDelete}
-                        onClose={() => setOpenDelete(false)}
-                        onConfirm={() => {
-                            removeUser(selectedUser.id);
-                            setOpenDelete(false);
-                        }}
-                        UserName={selectedUser.full_name}
-                    />
-                )}
-            </Box>
-        </Box>
+                {
+                    selectedUser && (
+                        <DeleteUserDialog
+                            open={openDelete}
+                            onClose={() => setOpenDelete(false)}
+                            onConfirm={() => {
+                                removeUser(selectedUser.id);
+                                setOpenDelete(false);
+                            }}
+                            UserName={selectedUser.full_name}
+                        />
+                    )
+                }
+            </Box >
+        </Box >
     );
 }

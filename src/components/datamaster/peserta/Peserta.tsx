@@ -136,7 +136,14 @@ export default function Peserta() {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" mt={10}>
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                }}
+            >
                 <CircularProgress />
             </Box>
         );
@@ -151,13 +158,47 @@ export default function Peserta() {
     };
 
     return (
-        <Box sx={{ display: "flex", minHeight: "100vh", width: "100vw" }}>
-            <Box sx={{ width: drawerWidth, position: "fixed" }}>
+        <Box
+            sx={{
+                display: "flex",
+                width: "100%",
+                minHeight: "100vh",
+            }}
+        >
+            <Box
+                sx={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: drawerWidth,
+                    height: "100vh",
+                    zIndex: 1200,
+                }}
+            >
                 <Sidebar />
             </Box>
 
-            <Box flexGrow={1} ml={`${drawerWidth}px`} p={3}>
-                {/* HEADER */}
+            <Box
+                sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: `${drawerWidth}px`,
+                    right: 0,
+                    minHeight: "100vh",
+                    boxSizing: "border-box",
+                    p: 3,
+
+                    fontFamily: "Roboto, sans-serif",
+                    transition: "margin-left 0.3s, width 0.3s",
+                    background:
+                        "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+                    color: "black",
+
+                    // HILANGKAN SCROLL X & Y
+                    overflowX: "hidden",
+                    overflowY: "hidden",
+                }}
+            >
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Typography fontSize={26} fontWeight={600}>
                         {pageTitle}
@@ -257,7 +298,6 @@ export default function Peserta() {
                             </Table>
                         </TableContainer>
 
-                        {/* FOOTER */}
                         <Box
                             display="flex"
                             justifyContent="space-between"
@@ -269,28 +309,29 @@ export default function Peserta() {
                                 component="div"
                                 count={filteredPeserta.length}
                                 page={page}
-                                onPageChange={(_, newPage) => setPage(newPage)}
+                                onPageChange={(event, newPage) => setPage(newPage)}
                                 rowsPerPage={rowsPerPage}
-                                onRowsPerPageChange={(e) => {
-                                    setRowsPerPage(parseInt(e.target.value, 10));
+                                onRowsPerPageChange={(event) => {
+                                    setRowsPerPage(parseInt(event.target.value, 10));
                                     setPage(0);
                                 }}
                                 rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                                labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
                                 labelRowsPerPage={t("rows")}
-                                labelDisplayedRows={({ from, to, count }) =>
-                                    `${from}-${to} ${t("of")} ${count}`
-                                }
                                 ActionsComponent={PaginationActions}
+                                sx={{
+                                    "& .MuiTablePagination-select": {
+                                        border: "1px solid #ccc",
+                                    }
+                                }}
                             />
 
                             <Button
                                 variant="contained"
                                 color="error"
                                 startIcon={<Add />}
-                                onClick={() =>
-                                    navigate("/datamaster/peserta/create-peserta")
-                                }
-                                aria-label="Create New Peserta"
+                                onClick={() => navigate("/datamaster/usermanagement/create-user")}
+                                aria-label="Create New User"
                             >
                                 {t("create")}
                             </Button>

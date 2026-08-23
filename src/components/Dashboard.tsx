@@ -1,7 +1,16 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
-import { Box, Typography, IconButton, Tooltip, Divider } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import {
+    Box,
+    Typography,
+    IconButton,
+    Tooltip,
+    Divider,
+    CircularProgress,
+} from "@mui/material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
+
 import TopCard from "../components/card/TopCard";
 import MiddleCard from "../components/card/MiddleCard";
 import CompetitionListDropdown from "../components/card/CompetitionListDropdown";
@@ -11,145 +20,494 @@ import Sidebar from "../components/bar/Sidebar";
 import UserMenu from "../components/header/UserMenu";
 import { useStore } from "../hooks/useStore";
 
-const data: {
-    topCards: {
-        label: string;
-        value: number;
-    }[];
-    middleCards: {
-        label: string;
-        subLabel: string;
-        value: number;
-    }[];
-    competitionList: string[];
-    totalCompetition: { [key: string]: number };
-    competitionTable: {
-        no: number;
-        name: string;
-        pic: string;
-    }[];
-} = {
-    topCards: [
-        { label: "Total All Registration Competition", value: 6 },
-        { label: "Total Definitive Registration Competitions", value: 1 },
-        { label: "Total Nominative Registration Competition", value: 2 },
-        { label: "Total Done Registration Competition", value: 3 },
-    ],
-    middleCards: [
-        { label: "Total Open Registrations", subLabel: "24 - April - 2023", value: 0 },
-        { label: "Total Registrations", subLabel: "April", value: 0 },
-        { label: "Total Registrations", subLabel: "2023", value: 6 },
-    ],
-    competitionList: [
-        "Januari",
-        "Februari",
-        "Maret",
-        "April",
-        "Mei",
-        "Juni",
-        "July",
-        "Agustus",
-        "September",
-        "Oktober",
-        "November",
-        "Desember"
-    ],
-    totalCompetition: {
-        Januari: 1,
-        Februari: 2,
-        Maret: 3,
-        April: 4,
-        Mei: 5,
-        Juni: 0,
-        July: 0,
-        Agustus: 0,
-        September: 0,
-        Oktober: 0,
-        November: 0,
-        Desember: 0
-    },
-    competitionTable: [
-        { no: 1, name: "Test Competition 4", pic: "Woro Endang" },
-        { no: 2, name: "Test Competition 5", pic: "Woro Endang" },
-        { no: 3, name: "Test Competition 6", pic: "Woro Endang" },
-        { no: 4, name: "Test Competition 7", pic: "Woro Endang" },
-        { no: 5, name: "Test Competition 8", pic: "Dian Arifin" },
-    ]
+import { fetchPertandingan } from "../api/turnament/pertandingan/pertandingan";
+import type { Pertandingan } from "../types/pertandingan";
+
+type CompetitionKey =
+    | "Semua"
+    | "Penyisihan"
+    | "16 Besar"
+    | "Perempat Final"
+    | "Semi Final"
+    | "Final";
+
+type CardData = {
+    label: string;
+    value: number;
 };
+
+type MiddleCardData = CardData & {
+    subLabel: string;
+};
+
+type CompetitionTableData = {
+    no: number;
+    name: string;
+    juri: Pertandingan["juri"];
+};
+
+const COMPETITIONS: CompetitionKey[] = [
+    "Semua",
+    "Penyisihan",
+    "16 Besar",
+    "Perempat Final",
+    "Semi Final",
+    "Final",
+];
+
+const BABAK_MAP: Record<
+    Exclude<CompetitionKey, "Semua">,
+    Pertandingan["babak"]
+> = {
+    Penyisihan: "penyisihan",
+    "16 Besar": "enam_belas_besar",
+    "Perempat Final": "perempat_final",
+    "Semi Final": "semi_final",
+    Final: "final",
+};
+
+const getPeserta = (data: Pertandingan[]) =>
+    new Set(
+        data.flatMap(({ peserta1_id, peserta2_id }) =>
+            [peserta1_id, peserta2_id].filter(
+                (id): id is number => Boolean(id)
+            )
+        )
+    );
 
 const Dashboard: React.FC = () => {
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
-    const [competition, setCompetition] = useState("April");
+
+    const [competition, setCompetition] =
+        useState<CompetitionKey>("Semua");
+    const [pertandingan, setPertandingan] =
+        useState<Pertandingan[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const drawerWidth = sidebarOpen ? 260 : 70;
 
     useEffect(() => {
         setPageTitle("Dashboard");
+    }, [setPageTitle]);
+
+    useEffect(() => {
+        document.title = `Turnament Pencak Silat${pageTitle ? ` | ${pageTitle}` : ""
+            }`;
+    }, [pageTitle]);
+
+    useEffect(() => {
+        const handleFullscreen = () =>
+            setIsFullscreen(Boolean(document.fullscreenElement));
+
+        document.addEventListener(
+            "fullscreenchange",
+            handleFullscreen
+        );
+
+        return () =>
+            document.removeEventListener(
+                "fullscreenchange",
+                handleFullscreen
+            );
     }, []);
 
     useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-    }, [pageTitle]);
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                setError("");
 
-    return (
-        <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
-            <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
-                <Sidebar />
-            </Box>
+                const data = await fetchPertandingan();
+
+                setPertandingan(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error("Gagal load pertandingan:", err);
+                setError("Gagal mengambil data pertandingan.");
+                setPertandingan([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, []);
+
+    const stats = useMemo(() => {
+        const pesertaSemua = getPeserta(pertandingan);
+
+        const pesertaByBabak = Object.entries(BABAK_MAP).reduce(
+            (result, [label, babak]) => {
+                result[label as Exclude<CompetitionKey, "Semua">] =
+                    getPeserta(
+                        pertandingan.filter(
+                            (item) => item.babak === babak
+                        )
+                    ).size;
+
+                return result;
+            },
+            {} as Record<
+                Exclude<CompetitionKey, "Semua">,
+                number
+            >
+        );
+
+        const totalCompetition: Record<CompetitionKey, number> = {
+            Semua: pertandingan.length,
+            Penyisihan: 0,
+            "16 Besar": 0,
+            "Perempat Final": 0,
+            "Semi Final": 0,
+            Final: 0,
+        };
+
+        pertandingan.forEach(({ babak }) => {
+            const competition = (
+                Object.entries(BABAK_MAP).find(
+                    ([, value]) => value === babak
+                )?.[0] ?? null
+            ) as Exclude<CompetitionKey, "Semua"> | null;
+
+            if (competition) {
+                totalCompetition[competition]++;
+            }
+        });
+
+        return {
+            pesertaSemua: pesertaSemua.size,
+            pesertaByBabak,
+            totalCompetition,
+            totalPertandingan: pertandingan.length,
+            totalBerlangsung: pertandingan.filter(
+                ({ status }) =>
+                    status === "berlangsung" ||
+                    status === "pause"
+            ).length,
+            totalSelesai: pertandingan.filter(
+                ({ status }) => status === "selesai"
+            ).length,
+        };
+    }, [pertandingan]);
+
+    const topCards = useMemo<CardData[]>(
+        () => [
+            {
+                label: "Total Semua Peserta",
+                value: stats.pesertaSemua,
+            },
+            {
+                label: "Total Peserta Babak Penyisihan",
+                value: stats.pesertaByBabak.Penyisihan,
+            },
+            {
+                label: "Total Peserta Babak 16 Besar",
+                value: stats.pesertaByBabak["16 Besar"],
+            },
+            {
+                label: "Total Peserta Babak Perempat Final",
+                value: stats.pesertaByBabak["Perempat Final"],
+            },
+            {
+                label: "Total Peserta Babak Semi Final",
+                value: stats.pesertaByBabak["Semi Final"],
+            },
+            {
+                label: "Total Peserta Babak Final",
+                value: stats.pesertaByBabak.Final,
+            },
+        ],
+        [stats]
+    );
+
+    const middleCards = useMemo<MiddleCardData[]>(
+        () => [
+            {
+                label: "Total Pertandingan",
+                subLabel: "Semua Babak",
+                value: stats.totalPertandingan,
+            },
+            {
+                label: "Pertandingan Berlangsung",
+                subLabel: "Saat Ini",
+                value: stats.totalBerlangsung,
+            },
+            {
+                label: "Pertandingan Selesai",
+                subLabel: "Semua Babak",
+                value: stats.totalSelesai,
+            },
+        ],
+        [stats]
+    );
+
+    const competitionTable = useMemo<CompetitionTableData[]>(
+        () => {
+            const selectedBabak =
+                competition === "Semua"
+                    ? null
+                    : BABAK_MAP[competition];
+
+            return pertandingan
+                .filter(
+                    (item) =>
+                        !selectedBabak ||
+                        item.babak === selectedBabak
+                )
+                .slice(0, 5)
+                .map((item, index) => ({
+                    no: index + 1,
+
+                    name: `${item.peserta1_name} vs ${item.peserta2_name ?? "BYE"
+                        }`,
+
+                    juri: item.juri ?? [],
+                }));
+        },
+        [pertandingan, competition]
+    );
+
+    const toggleFullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            } else {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (err) {
+            console.error("Fullscreen error:", err);
+        }
+    };
+
+    if (loading) {
+        return (
             <Box
                 sx={{
-                    flexGrow: 1,
-                    transition: "margin-left 0.3s",
-                    ml: `${drawerWidth}px`,
-                    padding: 3,
-                    fontFamily: "Roboto, sans-serif",
-                    background: "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
-                    color: "black",
+                    minHeight: "100vh",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
                 }}
             >
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                    <Typography variant="h2" fontWeight={600} fontSize={26}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                width: "100%",
+                minHeight: "100vh",
+                overflow: "hidden",
+            }}
+        >
+            <Box
+                sx={{
+                    width: drawerWidth,
+                    flexShrink: 0,
+                    transition: "width 0.3s",
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    height: "100vh",
+                    zIndex: 1200,
+                }}
+            >
+                <Sidebar />
+            </Box>
+
+            <Box
+                sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    ml: `${drawerWidth}px`,
+                    width: `calc(100% - ${drawerWidth}px)`,
+                    maxWidth: `calc(100% - ${drawerWidth}px)`,
+                    boxSizing: "border-box",
+                    transition: "margin-left 0.3s, width 0.3s",
+                    fontFamily: "Roboto, sans-serif",
+                    background:
+                        "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+                    color: "black",
+
+                    // HILANGKAN SCROLL X & Y
+                    overflowX: "hidden",
+                    overflowY: "hidden",
+
+                    p: 3,
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 3,
+                    }}
+                >
+                    <Typography
+                        variant="h2"
+                        fontWeight={600}
+                        fontSize={26}
+                    >
                         {pageTitle}
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: 10, color: "#666" }}>
+
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            color: "#666",
+                        }}
+                    >
                         <Tooltip title="Fullscreen">
-                            <IconButton size="medium" sx={{ color: "#666" }}>
-                                <FullscreenIcon fontSize="medium" />
+                            <IconButton
+                                size="medium"
+                                sx={{ color: "#666" }}
+                                onClick={toggleFullscreen}
+                            >
+                                {isFullscreen ? (
+                                    <FullscreenExitIcon />
+                                ) : (
+                                    <FullscreenIcon />
+                                )}
                             </IconButton>
                         </Tooltip>
+
                         <UserMenu />
                     </Box>
                 </Box>
+
                 <Divider />
-                <Divider />
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 5, mb: 6 }}>
-                    {data.topCards.map(({ label, value }, i) => (
-                        <Box key={i} sx={{ width: { xs: "100%", sm: "55%", md: "23.85%" } }}>
-                            <TopCard label={label} value={value} />
+
+                {error && (
+                    <Box
+                        sx={{
+                            mt: 3,
+                            p: 2,
+                            borderRadius: 2,
+                            backgroundColor: "#ffebee",
+                            color: "#c62828",
+                        }}
+                    >
+                        <Typography variant="body2">
+                            {error}
+                        </Typography>
+                    </Box>
+                )}
+
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 3,
+                        mt: 5,
+                        mb: 6,
+                    }}
+                >
+                    {topCards.map((card) => (
+                        <Box
+                            key={card.label}
+                            sx={{
+                                width: {
+                                    xs: "100%",
+                                    sm: "31.5%",
+                                    md: "41.5%",
+                                    lg: "30.4%",
+                                },
+                                minWidth: { lg: 150 },
+                            }}
+                        >
+                            <TopCard {...card} />
                         </Box>
                     ))}
                 </Box>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 6 }}>
-                    {data.middleCards.map(({ label, subLabel, value }, i) => (
-                        <Box key={i} sx={{ width: { xs: "100%", md: "32.3%" } }}>
-                            <MiddleCard label={label} subLabel={subLabel} value={value} />
+
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 3,
+                        mb: 6,
+                    }}
+                >
+                    {middleCards.map((card) => (
+                        <Box
+                            key={card.label}
+                            sx={{
+                                width: {
+                                    xs: "100%",
+                                    sm: "31.5%",
+                                    md: "41.5%",
+                                    lg: "30.4%",
+                                },
+                            }}
+                        >
+                            <MiddleCard {...card} />
                         </Box>
                     ))}
                 </Box>
-                <Box sx={{ mb: 6 }}>
+
+                <Box
+                    sx={{
+                        mb: 6,
+                        width: {
+                            xs: "100%",
+                            sm: "90%",
+                            md: "87%",
+                            lg: "94.2%",
+                        },
+                    }}>
                     <CompetitionListDropdown
-                        competitionList={data.competitionList}
+                        competitionList={COMPETITIONS}
                         selectedCompetition={competition}
-                        onChange={(e) => setCompetition(e.target.value as string)}
+                        onChange={(event) =>
+                            setCompetition(
+                                event.target.value as CompetitionKey
+                            )
+                        }
                     />
                 </Box>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    <Box sx={{ width: { xs: "100%", md: "60%" } }}>
-                        <TotalCompetitionApril totalCompetitionApril={data.totalCompetition[competition]} />
+
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 4,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: {
+                                xs: "100%",
+                                md: "54.5%",
+                            },
+                        }}
+                    >
+                        <TotalCompetitionApril
+                            totalCompetitionApril={
+                                stats.totalCompetition[
+                                competition
+                                ]
+                            }
+                        />
                     </Box>
-                    <Box sx={{
-                        width: { xs: "100wh", md: "37.8%" },
-                    }}>
-                        <CompetitionTable competitionTable={data.competitionTable} />
+
+                    <Box
+                        sx={{
+                            width: {
+                                xs: "100%",
+                                md: "37.8%",
+                            },
+                        }}
+                    >
+                        <CompetitionTable
+                            competitionTable={competitionTable}
+                        />
                     </Box>
                 </Box>
             </Box>

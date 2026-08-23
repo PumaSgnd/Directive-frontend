@@ -10,7 +10,7 @@ const TotalCompetitionApril: React.FC<TotalCompetitionAprilProps> = ({
 }) => (
   <Paper sx={{ p: 2, borderRadius: 1 }}>
     <Typography fontSize={18} color="text.secondary" mb={0.5}>
-      Total Competition April
+      Total Competition
     </Typography>
     <Typography fontWeight={700} fontSize={18}>
       {totalCompetitionApril}

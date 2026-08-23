@@ -106,18 +106,14 @@ export default function EditPICModal() {
   if (loading) {
     return (
       <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        position="fixed"
-        top={0}
-        left={0}
-        width="100vw"
-        height="100vh"
-        bgcolor="rgba(255,255,255,0.7)"
-        zIndex={9999}
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
-        <CircularProgress size={80} />
+        <CircularProgress />
       </Box>
     );
   }

@@ -86,7 +86,7 @@ export default function Score() {
         useState(0);
 
     const [rowsPerPage, setRowsPerPage] =
-        useState(10);
+        useState(5);
 
     const [isFullscreen, setIsFullscreen] =
         useState(false);
@@ -390,13 +390,10 @@ export default function Score() {
         return (
             <Box
                 sx={{
-                    minHeight:
-                        "100vh",
+                    minHeight: "100vh",
                     display: "flex",
-                    alignItems:
-                        "center",
-                    justifyContent:
-                        "center",
+                    justifyContent: "center",
+                    alignItems: "center",
                 }}
             >
                 <CircularProgress />
