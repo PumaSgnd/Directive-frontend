@@ -782,7 +782,7 @@ export default function Score() {
                                                                     color="success"
                                                                     onClick={() =>
                                                                         window.open(
-                                                                            `/hitungTurnamen/skor/${match.id}?monitor=true`,
+                                                                            `/skor/${match.id}?monitor=true`,
                                                                             "_blank",
                                                                             "noopener,noreferrer"
                                                                         )
