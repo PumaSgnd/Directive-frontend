@@ -11,6 +11,8 @@ import {
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 
+import { useTranslation } from "react-i18next";
+
 import TopCard from "../components/card/TopCard";
 import MiddleCard from "../components/card/MiddleCard";
 import CompetitionListDropdown from "../components/card/CompetitionListDropdown";
@@ -76,27 +78,41 @@ const getPeserta = (data: Pertandingan[]) =>
     );
 
 const Dashboard: React.FC = () => {
+    const { t } = useTranslation();
+
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
 
     const [competition, setCompetition] =
         useState<CompetitionKey>("Semua");
+
     const [pertandingan, setPertandingan] =
         useState<Pertandingan[]>([]);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const drawerWidth = sidebarOpen ? 260 : 70;
 
+    /*
+     * PAGE TITLE
+     */
     useEffect(() => {
-        setPageTitle("Dashboard");
-    }, [setPageTitle]);
+        setPageTitle(t("dashboard"));
+    }, [setPageTitle, t]);
 
+    /*
+     * DOCUMENT TITLE
+     */
     useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? ` | ${pageTitle}` : ""
-            }`;
-    }, [pageTitle]);
+        document.title = `${t("tournamentTitle")}${
+            pageTitle ? ` | ${pageTitle}` : ""
+        }`;
+    }, [pageTitle, t]);
 
+    /*
+     * FULLSCREEN
+     */
     useEffect(() => {
         const handleFullscreen = () =>
             setIsFullscreen(Boolean(document.fullscreenElement));
@@ -113,6 +129,9 @@ const Dashboard: React.FC = () => {
             );
     }, []);
 
+    /*
+     * LOAD DATA
+     */
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -124,7 +143,8 @@ const Dashboard: React.FC = () => {
                 setPertandingan(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error("Gagal load pertandingan:", err);
-                setError("Gagal mengambil data pertandingan.");
+
+                setError(t("getMatchError"));
                 setPertandingan([]);
             } finally {
                 setLoading(false);
@@ -132,19 +152,23 @@ const Dashboard: React.FC = () => {
         };
 
         loadData();
-    }, []);
+    }, [t]);
 
+    /*
+     * STATISTICS
+     */
     const stats = useMemo(() => {
         const pesertaSemua = getPeserta(pertandingan);
 
         const pesertaByBabak = Object.entries(BABAK_MAP).reduce(
             (result, [label, babak]) => {
-                result[label as Exclude<CompetitionKey, "Semua">] =
-                    getPeserta(
-                        pertandingan.filter(
-                            (item) => item.babak === babak
-                        )
-                    ).size;
+                result[
+                    label as Exclude<CompetitionKey, "Semua">
+                ] = getPeserta(
+                    pertandingan.filter(
+                        (item) => item.babak === babak
+                    )
+                ).size;
 
                 return result;
             },
@@ -180,68 +204,79 @@ const Dashboard: React.FC = () => {
             pesertaByBabak,
             totalCompetition,
             totalPertandingan: pertandingan.length,
+
             totalBerlangsung: pertandingan.filter(
                 ({ status }) =>
                     status === "berlangsung" ||
                     status === "pause"
             ).length,
+
             totalSelesai: pertandingan.filter(
                 ({ status }) => status === "selesai"
             ).length,
         };
     }, [pertandingan]);
 
+    /*
+     * TOP CARDS
+     */
     const topCards = useMemo<CardData[]>(
         () => [
             {
-                label: "Total Semua Peserta",
+                label: t("totalAllParticipants"),
                 value: stats.pesertaSemua,
             },
             {
-                label: "Total Peserta Babak Penyisihan",
+                label: t("totalParticipantsQualification"),
                 value: stats.pesertaByBabak.Penyisihan,
             },
             {
-                label: "Total Peserta Babak 16 Besar",
+                label: t("totalParticipantsRound16"),
                 value: stats.pesertaByBabak["16 Besar"],
             },
             {
-                label: "Total Peserta Babak Perempat Final",
+                label: t("totalParticipantsQuarterFinal"),
                 value: stats.pesertaByBabak["Perempat Final"],
             },
             {
-                label: "Total Peserta Babak Semi Final",
+                label: t("totalParticipantsSemiFinal"),
                 value: stats.pesertaByBabak["Semi Final"],
             },
             {
-                label: "Total Peserta Babak Final",
+                label: t("totalParticipantsFinal"),
                 value: stats.pesertaByBabak.Final,
             },
         ],
-        [stats]
+        [stats, t]
     );
 
+    /*
+     * MIDDLE CARDS
+     */
     const middleCards = useMemo<MiddleCardData[]>(
         () => [
             {
-                label: "Total Pertandingan",
-                subLabel: "Semua Babak",
+                label: t("totalMatches"),
+                subLabel: t("allRounds"),
                 value: stats.totalPertandingan,
             },
             {
-                label: "Pertandingan Berlangsung",
-                subLabel: "Saat Ini",
+                label: t("ongoingMatches"),
+                subLabel: t("currently"),
                 value: stats.totalBerlangsung,
             },
             {
-                label: "Pertandingan Selesai",
-                subLabel: "Semua Babak",
+                label: t("finishedMatches"),
+                subLabel: t("allRounds"),
                 value: stats.totalSelesai,
             },
         ],
-        [stats]
+        [stats, t]
     );
 
+    /*
+     * COMPETITION TABLE
+     */
     const competitionTable = useMemo<CompetitionTableData[]>(
         () => {
             const selectedBabak =
@@ -259,15 +294,84 @@ const Dashboard: React.FC = () => {
                 .map((item, index) => ({
                     no: index + 1,
 
-                    name: `${item.peserta1_name} vs ${item.peserta2_name ?? "BYE"
-                        }`,
+                    name: `${item.peserta1_name} ${
+                        t("vs")
+                    } ${
+                        item.peserta2_name ?? t("bye")
+                    }`,
 
                     juri: item.juri ?? [],
                 }));
         },
-        [pertandingan, competition]
+        [pertandingan, competition, t]
     );
 
+    /*
+     * TRANSLATED COMPETITION LIST
+     *
+     * Nilai asli tetap CompetitionKey,
+     * yang berubah hanya teks tampilannya.
+     */
+    const translatedCompetitions = useMemo(
+        () =>
+            COMPETITIONS.map((item) => {
+                switch (item) {
+                    case "Semua":
+                        return t("semua");
+
+                    case "Penyisihan":
+                        return t("penyisihan");
+
+                    case "16 Besar":
+                        return t("enambelasBesar");
+
+                    case "Perempat Final":
+                        return t("perempat");
+
+                    case "Semi Final":
+                        return t("semiFinal");
+
+                    case "Final":
+                        return t("final");
+
+                    default:
+                        return item;
+                }
+            }),
+        [t]
+    );
+
+    /*
+     * CURRENT TRANSLATED COMPETITION
+     */
+    const selectedCompetitionLabel = useMemo(() => {
+        switch (competition) {
+            case "Semua":
+                return t("semua");
+
+            case "Penyisihan":
+                return t("penyisihan");
+
+            case "16 Besar":
+                return t("enambelasBesar");
+
+            case "Perempat Final":
+                return t("perempat");
+
+            case "Semi Final":
+                return t("semiFinal");
+
+            case "Final":
+                return t("final");
+
+            default:
+                return competition;
+        }
+    }, [competition, t]);
+
+    /*
+     * FULLSCREEN
+     */
     const toggleFullscreen = async () => {
         try {
             if (document.fullscreenElement) {
@@ -280,6 +384,9 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    /*
+     * LOADING
+     */
     if (loading) {
         return (
             <Box
@@ -304,6 +411,7 @@ const Dashboard: React.FC = () => {
                 overflow: "hidden",
             }}
         >
+            {/* SIDEBAR */}
             <Box
                 sx={{
                     width: drawerWidth,
@@ -319,6 +427,7 @@ const Dashboard: React.FC = () => {
                 <Sidebar />
             </Box>
 
+            {/* MAIN CONTENT */}
             <Box
                 sx={{
                     flex: 1,
@@ -327,19 +436,20 @@ const Dashboard: React.FC = () => {
                     width: `calc(100% - ${drawerWidth}px)`,
                     maxWidth: `calc(100% - ${drawerWidth}px)`,
                     boxSizing: "border-box",
-                    transition: "margin-left 0.3s, width 0.3s",
+                    transition:
+                        "margin-left 0.3s, width 0.3s",
                     fontFamily: "Roboto, sans-serif",
                     background:
                         "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
                     color: "black",
 
-                    // HILANGKAN SCROLL X & Y
                     overflowX: "hidden",
                     overflowY: "hidden",
 
                     p: 3,
                 }}
             >
+                {/* HEADER */}
                 <Box
                     sx={{
                         display: "flex",
@@ -364,7 +474,7 @@ const Dashboard: React.FC = () => {
                             color: "#666",
                         }}
                     >
-                        <Tooltip title="Fullscreen">
+                        <Tooltip title={t("fullscreen")}>
                             <IconButton
                                 size="medium"
                                 sx={{ color: "#666" }}
@@ -384,6 +494,7 @@ const Dashboard: React.FC = () => {
 
                 <Divider />
 
+                {/* ERROR */}
                 {error && (
                     <Box
                         sx={{
@@ -400,6 +511,7 @@ const Dashboard: React.FC = () => {
                     </Box>
                 )}
 
+                {/* TOP CARDS */}
                 <Box
                     sx={{
                         display: "flex",
@@ -427,6 +539,7 @@ const Dashboard: React.FC = () => {
                     ))}
                 </Box>
 
+                {/* MIDDLE CARDS */}
                 <Box
                     sx={{
                         display: "flex",
@@ -452,6 +565,7 @@ const Dashboard: React.FC = () => {
                     ))}
                 </Box>
 
+                {/* COMPETITION FILTER */}
                 <Box
                     sx={{
                         mb: 6,
@@ -461,18 +575,32 @@ const Dashboard: React.FC = () => {
                             md: "87%",
                             lg: "94.2%",
                         },
-                    }}>
+                    }}
+                >
                     <CompetitionListDropdown
-                        competitionList={COMPETITIONS}
-                        selectedCompetition={competition}
-                        onChange={(event) =>
-                            setCompetition(
-                                event.target.value as CompetitionKey
-                            )
+                        competitionList={translatedCompetitions}
+                        selectedCompetition={
+                            selectedCompetitionLabel
                         }
+                        onChange={(event) => {
+                            const selectedLabel =
+                                event.target.value;
+
+                            const index =
+                                translatedCompetitions.indexOf(
+                                    selectedLabel
+                                );
+
+                            if (index !== -1) {
+                                setCompetition(
+                                    COMPETITIONS[index]
+                                );
+                            }
+                        }}
                     />
                 </Box>
 
+                {/* BOTTOM SECTION */}
                 <Box
                     sx={{
                         display: "flex",
@@ -480,6 +608,7 @@ const Dashboard: React.FC = () => {
                         gap: 4,
                     }}
                 >
+                    {/* TOTAL COMPETITION */}
                     <Box
                         sx={{
                             width: {
@@ -491,12 +620,13 @@ const Dashboard: React.FC = () => {
                         <TotalCompetitionApril
                             totalCompetitionApril={
                                 stats.totalCompetition[
-                                competition
+                                    competition
                                 ]
                             }
                         />
                     </Box>
 
+                    {/* COMPETITION TABLE */}
                     <Box
                         sx={{
                             width: {

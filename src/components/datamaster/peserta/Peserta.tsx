@@ -76,8 +76,12 @@ export default function Peserta() {
     }, [t]);
 
     useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-    }, [pageTitle]);
+        document.title =
+            `${t("turnamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
+            }`;
+    }, [pageTitle, t]);
 
     const memoizedPeserta = useMemo(
         () => (Array.isArray(Peserta) ? Peserta : []),
@@ -330,8 +334,8 @@ export default function Peserta() {
                                 variant="contained"
                                 color="error"
                                 startIcon={<Add />}
-                                onClick={() => navigate("/datamaster/usermanagement/create-user")}
-                                aria-label="Create New User"
+                                onClick={() => navigate("/datamaster/peserta/create-peserta")}
+                                aria-label="Create Peserta"
                             >
                                 {t("create")}
                             </Button>

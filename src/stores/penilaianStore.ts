@@ -1,21 +1,60 @@
-//{*/stores/penilaianStore.ts*}
 import { create } from "zustand";
-import { PenilaianHistoryItem, Scoreboard } from "../types/penilaian";
+
+import {
+    PenilaianHistoryItem,
+    Scoreboard,
+    ScorePerJuri,
+} from "../types/penilaian";
 
 interface PenilaianStore {
     history: PenilaianHistoryItem[];
+
     scoreboard: Scoreboard | null;
 
-    setHistory: (data: PenilaianHistoryItem[]) => void;
-    setScoreboard: (data: Scoreboard | null) => void;
+    scorePerJuri: ScorePerJuri[];
+
+    setHistory: (
+        data: PenilaianHistoryItem[]
+    ) => void;
+
+    setScoreboard: (
+        data: Scoreboard | null
+    ) => void;
+
+    setScorePerJuri: (
+        data: ScorePerJuri[]
+    ) => void;
+
     clear: () => void;
 }
 
-export const usePenilaianStore = create<PenilaianStore>((set) => ({
-    history: [],
-    scoreboard: null,
+export const usePenilaianStore =
+    create<PenilaianStore>((set) => ({
+        history: [],
 
-    setHistory: (data) => set({ history: data }),
-    setScoreboard: (data) => set({ scoreboard: data }),
-    clear: () => set({ history: [], scoreboard: null }),
-}));
+        scoreboard: null,
+
+        scorePerJuri: [],
+
+        setHistory: (data) =>
+            set({
+                history: data,
+            }),
+
+        setScoreboard: (data) =>
+            set({
+                scoreboard: data,
+            }),
+
+        setScorePerJuri: (data) =>
+            set({
+                scorePerJuri: data,
+            }),
+
+        clear: () =>
+            set({
+                history: [],
+                scoreboard: null,
+                scorePerJuri: [],
+            }),
+    }));

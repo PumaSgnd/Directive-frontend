@@ -54,6 +54,27 @@ i18n
           juriUpdated: "Juri berhasil diperbarui!",
           save: "Save",
           loading: "Loading...",
+          turnamentTitle: "PENCAK SILAT TOURNAMENT",
+          toggleFullscreen: "Toggle fullscreen view",
+          edit: "Edit",
+
+          // DASHBOARD
+          totalAllParticipants: "Total All Participants",
+          totalParticipantsQualification: "Total Participants in Qualification Round",
+          totalParticipantsRound16: "Total Participants in Round of 16",
+          totalParticipantsQuarterFinal: "Total Participants in Quarter Final",
+          totalParticipantsSemiFinal: "Total Participants in Semi Final",
+          totalParticipantsFinal: "Total Participants in Final",
+          listCompetition: "List Competition",
+          listMatches: "List Matches",
+          totalMatches: "Total Matches",
+          allRounds: "All Rounds",
+          ongoingMatches: "Ongoing Matches",
+          currently: "Currently",
+          finishedMatches: "Finished Matches",
+
+          loadMatchError: "Failed to load matches.",
+          getMatchError: "Failed to retrieve match data.",
 
           // VALIDATION
           fullNameRequired: "Full Name is required.",
@@ -63,6 +84,7 @@ i18n
           roleRequired: "Role is required.",
 
           // PESERTA VALIDATION
+          pesertaTitle: "Input Participant Data",
           pesertaRequired: "Participant name is required.",
           regionalRequired: "Regional is required.",
           weightRequired: "Weight is required.",
@@ -81,8 +103,20 @@ i18n
           vs: "VS",
           belum_mulai: "Not Started",
           berlangsung: "Ongoing",
+          pause: "Paused",
           selesai: "Finished",
           durasi: "Duration",
+          peserta1: "Participant 1",
+          peserta2: "Participant 2",
+          round: "Round",
+          round1: "Round 1",
+          round2: "Round 2",
+          round3: "Round 3",
+          mainJudge: "Main Judges",
+          reserveJudge: "Reserve Judges",
+          bye: "BYE",
+          semua: "All",
+          of: "of",
 
           // USER MENU
           logout: "Logout",
@@ -98,7 +132,40 @@ i18n
           exitFullscreen: "Exit Fullscreen",
           scorePerJudge: "Score Per Judge",
           noJudgeAssigned: "No judges assigned.",
-          pause: "Paused",
+
+          // CONTROLLER
+          noMatchSelected: "No match selected yet",
+          goToMatchDataDescription:
+            "Open the Match Data page, then select a match to start scoring.",
+          goToMatchData: "Go to Match Data",
+
+          matchNotStarted:
+            "The match has not started yet. Press Play to start.",
+          matchPaused: "The match is paused.",
+          matchFinished:
+            "The match is finished. Score input is disabled.",
+
+          roundLabel: "Round",
+          roundFinished: "Finish Round",
+          finishMatch: "Finish Match",
+          finished: "Finished",
+
+          judgeReplacement: "Judge Replacement",
+          replace: "Replace",
+          replaceJudge: "Replace Judge",
+          noActiveMainJudge: "No active main judges.",
+          noActiveReserveJudge: "No active reserve judges.",
+
+          undoLastScore: "Undo the last score input from this judge",
+
+          roundNotFinished: "Failed to finish the round.",
+          judgeReplacementError: "Failed to replace judge.",
+          startMatchError: "Failed to start the match.",
+          pauseMatchError: "Failed to pause the match.",
+          resumeMatchError: "Failed to resume the match.",
+          finishMatchError: "Failed to finish the match.",
+
+          roundStatus: "Round",
 
           // SIDEBAR
           dashboard: "Dashboard",
@@ -162,6 +229,28 @@ i18n
           juriUpdated: "Juri berhasil diperbarui!",
           save: "Simpan",
           loading: "Memuat...",
+          turnamentTitle: "Turnament Pencak Silat",
+          toggleFullscreen: "Aktifkan tampilan layar penuh",
+          edit: "Edit",
+
+          // DASHBOARD
+          totalAllParticipants: "Total Semua Peserta",
+          totalParticipantsQualification: "Total Peserta Babak Penyisihan",
+          totalParticipantsRound16: "Total Peserta Babak 16 Besar",
+          totalParticipantsQuarterFinal: "Total Peserta Babak Perempat Final",
+          totalParticipantsSemiFinal: "Total Peserta Babak Semi Final",
+          totalParticipantsFinal: "Total Peserta Babak Final",
+          listCompetition: "Daftar Kompetisi",
+          listMatches: "Daftar Pertandingan",
+
+          totalMatches: "Total Pertandingan",
+          allRounds: "Semua Babak",
+          ongoingMatches: "Pertandingan Berlangsung",
+          currently: "Saat Ini",
+          finishedMatches: "Pertandingan Selesai",
+
+          loadMatchError: "Gagal memuat pertandingan.",
+          getMatchError: "Gagal mengambil data pertandingan.",
 
           // VALIDATION
           fullNameRequired: "Nama wajib diisi.",
@@ -171,6 +260,7 @@ i18n
           roleRequired: "Role wajib diisi.",
 
           // PESERTA VALIDATION
+          pesertaTitle: "Masukkan Data Peserta",
           pesertaRequired: "Nama peserta wajib diisi.",
           regionalRequired: "Wilayah wajib diisi.",
           weightRequired: "Berat badan wajib diisi.",
@@ -189,8 +279,20 @@ i18n
           vs: "VS",
           belum_mulai: "Belum Mulai",
           berlangsung: "Berlangsung",
+          pause: "Dijeda",
           selesai: "Selesai",
           durasi: "Durasi",
+          peserta1: "Peserta 1",
+          peserta2: "Peserta 2",
+          round: "Ronde",
+          round1: "Ronde 1",
+          round2: "Ronde 2",
+          round3: "Ronde 3",
+          mainJudge: "Juri Utama",
+          reserveJudge: "Juri Cadangan",
+          bye: "BYE",
+          semua: "Semua",
+          of: "dari",
 
           // USER MENU
           logout: "Keluar",
@@ -200,13 +302,47 @@ i18n
           account: "Akun",
 
           // SCORE
-          tournamentTitle: "TURNAMEN PENCAK SILAT",
+          tournamentTitle: "Turnament Pencak Silat",
           scoreboardTitle: "SCORE BOARD",
           noMatchesFound: "Belum ada pertandingan",
           exitFullscreen: "Keluar Layar Penuh",
           scorePerJudge: "Perolehan Skor Juri",
           noJudgeAssigned: "Belum ada juri yang ditunjuk.",
 
+          // CONTROLLER
+          noMatchSelected: "Belum ada pertandingan yang dipilih",
+          goToMatchDataDescription:
+            "Buka halaman Data Pertandingan, lalu pilih salah satu pertandingan untuk mulai menghitung skor.",
+          goToMatchData: "Ke Data Pertandingan",
+
+          matchNotStarted:
+            "Pertandingan belum dimulai. Tekan tombol Play untuk memulai.",
+          matchPaused: "Pertandingan sedang di-pause.",
+          matchFinished:
+            "Pertandingan sudah selesai. Input skor dinonaktifkan.",
+
+          roundLabel: "Ronde",
+          roundFinished: "Selesaikan Ronde",
+          finishMatch: "Selesaikan Pertandingan",
+          finished: "Selesai",
+
+          judgeReplacement: "Pergantian Juri",
+          replace: "Ganti",
+          replaceJudge: "Ganti Juri",
+          noActiveMainJudge: "Tidak ada juri utama aktif.",
+          noActiveReserveJudge: "Tidak ada juri cadangan aktif.",
+
+          undoLastScore: "Undo input terakhir milik juri ini",
+
+          roundNotFinished: "Gagal menyelesaikan ronde.",
+          judgeReplacementError: "Gagal melakukan pergantian juri.",
+          startMatchError: "Gagal memulai pertandingan.",
+          pauseMatchError: "Gagal melakukan pause.",
+          resumeMatchError: "Gagal melanjutkan pertandingan.",
+          finishMatchError: "Gagal menyelesaikan pertandingan.",
+
+          roundStatus: "Ronde",
+          
           // SIDEBAR
           dashboard: "Dashboard",
           dataMaster: "Data Master",

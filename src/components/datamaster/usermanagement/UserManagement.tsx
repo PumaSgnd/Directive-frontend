@@ -84,8 +84,12 @@ export default function UserManagement() {
     }, [t]);
 
     useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-    }, [pageTitle]);
+        document.title =
+            `${t("turnamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
+            }`;
+    }, [pageTitle, t]);
 
     const memoizedUser = useMemo(
         () => Array.isArray(User) ? User : [],

@@ -43,6 +43,7 @@ import {
 } from "../../api/turnament/penilaian/penilaian";
 
 import PaginationActions from "../custom/PaginationActions";
+import ExportPdf from "../custom/exportPdf";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -97,7 +98,7 @@ export default function Score() {
         >({});
 
     useEffect(() => {
-        setPageTitle(t("skor"));
+        setPageTitle(`${t("skor")} ${t("final")}`);
     }, [
         setPageTitle,
         t,
@@ -567,34 +568,16 @@ export default function Score() {
                         </MenuItem>
                     </TextField>
 
-                    <TextField
-                        size="small"
-                        placeholder={t(
-                            "searchParticipant"
-                        )}
-                        value={search}
-                        onChange={(
-                            e
-                        ) =>
-                            setSearch(
-                                e.target.value
-                            )
-                        }
-                        InputProps={{
-                            startAdornment:
-                                (
-                                    <Search
-                                        fontSize="small"
-                                        sx={{
-                                            mr: 1,
-                                        }}
-                                    />
-                                ),
-                        }}
-                        sx={{
-                            width: 280,
-                        }}
-                    />
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <ExportPdf currentBabak="final" />
+
+                        <TextField
+                            placeholder={t("search")}
+                            size="small"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </Box>
                 </Box>
 
                 <Card

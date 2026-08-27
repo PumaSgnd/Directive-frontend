@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Paper, Select, MenuItem, Typography, SelectChangeEvent } from "@mui/material";
+import { t } from "i18next";
 
 interface CompetitionListDropdownProps {
   competitionList: string[];
@@ -14,7 +15,7 @@ const CompetitionListDropdown: React.FC<CompetitionListDropdownProps> = ({
 }) => (
   <Paper sx={{ p: 2, borderRadius: 1 }}>
     <Typography fontSize={18} color="text.secondary" mb={1}>
-      List Competition
+      {t("listCompetition")}
     </Typography>
     <Select
       fullWidth

@@ -49,8 +49,12 @@ export default function CreateJuriModal() {
     }, [t]);
 
     useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-    }, [pageTitle]);
+        document.title =
+            `${t("turnamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
+            }`;
+    }, [pageTitle, t]);
 
     const fieldErrors = useMemo(
         () => ({

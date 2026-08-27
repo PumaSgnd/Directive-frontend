@@ -74,7 +74,7 @@ const Sidebar: React.FC = () => {
           { text: "final", icon: <EmojiEvents />, path: "/pertandingan/final" }
         ]
       },
-      { text: "hitungTurnamen", icon: <Calculate />, path: "/hitungTurnamen/controller" },
+      { text: "hitungTurnamen", icon: <Calculate />, path: "/hitungTurnamen" },
       {
         text: "skor",
         icon: <Scoreboard />,

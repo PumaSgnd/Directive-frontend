@@ -1,5 +1,11 @@
-import { useState, useEffect } from "react";
 import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  Alert,
   Box,
   Typography,
   TextField,
@@ -13,25 +19,28 @@ import {
   DialogActions,
   MenuItem,
   IconButton,
-  Tooltip
+  Tooltip,
+  CircularProgress,
 } from "@mui/material";
+
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 
-import { useNavigate, useParams } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
 import { useTranslation } from "react-i18next";
 
 import Sidebar from "../../bar/Sidebar";
 import UserMenu from "../../header/UserMenu";
+
 import { useStore } from "../../../hooks/useStore";
 
 import {
-  // ⚠️ pastikan nama export ini SAMA dengan yang ada di
-  // api/turnament/pertandingan/pertandingan.ts kamu.
-  // Kalau di file kamu masih bernama getPertandinganById,
-  // ganti nama import ini saja jadi getPertandinganById.
-  fetchPertandinganById as getPertandinganById,
-  updatePertandingan
+  fetchPertandinganById,
+  updatePertandingan,
 } from "../../../api/turnament/pertandingan/pertandingan";
 
 import { usePesertaStore } from "../../../stores/PesertaStore";
@@ -39,367 +48,1266 @@ import { usePeserta } from "../../../hooks/usePeserta";
 
 import { useJuriStore } from "../../../stores/JuriStore";
 import { useJuri } from "../../../hooks/useJuri";
-import { Pertandingan } from "../../../types/pertandingan";
+
+import {
+  UpdatePertandinganRequest,
+  Pertandingan,
+} from "../../../types/pertandingan";
 
 type FormType = {
   pesertaA: number | "";
   pesertaB: number | "";
-  juri1: number | "";
-  juri2: number | "";
-  juri3: number | "";
+
+  juriUtama1: number | "";
+  juriUtama2: number | "";
+  juriUtama3: number | "";
+
+  juriCadangan1: number | "";
+  juriCadangan2: number | "";
+  juriCadangan3: number | "";
+
+  durasiRonde: 2 | 3;
 };
 
+const MAX_SELIBIH_BERAT = 5;
+
 export default function EditPenyisihan() {
-  const { id } = useParams();
+
+  const {
+    id,
+  } = useParams<{ id: string }>();
+
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const { sidebarOpen, pageTitle, setPageTitle } = useStore();
 
-  const drawerWidth = sidebarOpen ? 260 : 70;
+  const {
+    t,
+  } = useTranslation();
 
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
+  const {
+    sidebarOpen,
+    pageTitle,
+    setPageTitle,
+  } = useStore();
 
-  const [dialog, setDialog] = useState({
-    open: false,
-    status: "success" as "success" | "error",
-    message: ""
-  });
+  const drawerWidth =
+    sidebarOpen ? 260 : 70;
 
-  const [form, setForm] = useState<FormType>({
-    pesertaA: "",
-    pesertaB: "",
-    juri1: "",
-    juri2: "",
-    juri3: ""
-  });
+  const pertandinganId =
+    Number(id);
 
-  // Menyimpan data pertandingan asli (hasil fetch), supaya field
-  // yang TIDAK ditampilkan di form ini (babak, durasi_menit, status,
-  // winner_id, waktu_mulai, waktu_selesai, sisa_detik) tetap dikirim
-  // apa adanya saat update. Ini WAJIB, karena backend
-  // (pertandinganModel.updatePertandingan) meng-overwrite SEMUA
-  // kolom itu tanpa peduli mana yang benar-benar berubah — kalau
-  // tidak disertakan, nilainya akan jadi NULL di database.
-  const [original, setOriginal] = useState<Pertandingan | null>(null);
+  const [loading, setLoading] =
+    useState(false);
 
-  const { Peserta: pesertaList } = usePesertaStore();
-  const { Juri: juriList } = useJuriStore();
+  const [initialLoading, setInitialLoading] =
+    useState(true);
 
-  const { loadPeserta } = usePeserta();
-  const { loadJuri } = useJuri();
+  const [pertandingan, setPertandingan] =
+    useState<Pertandingan | null>(null);
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dialog, setDialog] =
+    useState({
+      open: false,
+      status:
+        "success" as
+        "success" | "error",
+      message: "",
+    });
 
-  // ================= FULLSCREEN =================
+  const [form, setForm] =
+    useState<FormType>({
+      pesertaA: "",
+      pesertaB: "",
+
+      juriUtama1: "",
+      juriUtama2: "",
+      juriUtama3: "",
+
+      juriCadangan1: "",
+      juriCadangan2: "",
+      juriCadangan3: "",
+
+      durasiRonde: 2,
+    });
+
+  const {
+    Peserta: pesertaList,
+  } = usePesertaStore();
+
+  const {
+    Juri: juriList,
+  } = useJuriStore();
+
+  const {
+    loadPeserta,
+  } = usePeserta();
+
+  const {
+    loadJuri,
+  } = useJuri();
+
+  const [
+    isFullscreen,
+    setIsFullscreen,
+  ] = useState(false);
+
   useEffect(() => {
+
     const handleChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+
+      setIsFullscreen(
+        !!document.fullscreenElement
+      );
+
     };
 
-    document.addEventListener("fullscreenchange", handleChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleChange);
+    document.addEventListener(
+      "fullscreenchange",
+      handleChange
+    );
+
+    return () => {
+
+      document.removeEventListener(
+        "fullscreenchange",
+        handleChange
+      );
+
+    };
+
   }, []);
 
-  // ================= TITLE =================
   useEffect(() => {
-    setPageTitle(t("edit") + " " + t("penyisihan"));
-  }, [setPageTitle, t]);
+
+    setPageTitle(
+      t("edit") +
+      " " +
+      t("penyisihan")
+    );
+
+  }, [
+    setPageTitle,
+    t,
+  ]);
 
   useEffect(() => {
-    document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-  }, [pageTitle]);
 
-  // ================= LOAD MASTER DATA =================
+    document.title =
+      `Turnament Pencak Silat${pageTitle
+        ? " | " + pageTitle
+        : ""
+      }`;
+
+  }, [
+    pageTitle,
+  ]);
+
   useEffect(() => {
-    loadPeserta();
-    loadJuri();
+
+    const loadData = async () => {
+
+      try {
+
+        setInitialLoading(true);
+
+        await Promise.all([
+          loadPeserta(),
+          loadJuri(),
+        ]);
+
+      } catch (err) {
+
+        console.error(err);
+
+      } finally {
+
+        setInitialLoading(false);
+
+      }
+
+    };
+
+    loadData();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ================= LOAD DETAIL =================
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await getPertandinganById(Number(id));
 
-        setOriginal(res);
+    if (
+      !Number.isInteger(
+        pertandinganId
+      ) ||
+      pertandinganId <= 0
+    ) {
+      setInitialLoading(false);
+      return;
+    }
+
+    const loadDetail = async () => {
+
+      try {
+
+        setInitialLoading(true);
+
+        const data =
+          await fetchPertandinganById(
+            pertandinganId
+          );
+
+        if (
+          data.babak !==
+          "penyisihan"
+        ) {
+
+          setDialog({
+            open: true,
+            status: "error",
+            message:
+              "Pertandingan ini bukan pertandingan babak penyisihan.",
+          });
+
+          return;
+        }
+
+        setPertandingan(data);
+
+        const juriUtama =
+          data.juri.filter(
+            (juri) =>
+              juri.peran === "utama" &&
+              Boolean(juri.aktif)
+          );
+
+        const juriCadangan =
+          data.juri.filter(
+            (juri) =>
+              juri.peran === "cadangan" &&
+              Boolean(juri.aktif)
+          );
 
         setForm({
-          pesertaA: res.peserta1_id,
-          pesertaB: res.peserta2_id ?? "",
-          // Catatan: res.juri bisa berisi lebih dari 3 entri (lihat
-          // catatan bug di createPertandingan backend), jadi index
-          // 0/1/2 di sini tidak selalu representasi juri yang
-          // sebenarnya dipilih. Fallback "" ditambahkan supaya
-          // tidak crash kalau array lebih pendek dari 3.
-          juri1: res.juri?.[0]?.id ?? "",
-          juri2: res.juri?.[1]?.id ?? "",
-          juri3: res.juri?.[2]?.id ?? ""
+          pesertaA:
+            data.peserta1_id ?? "",
+
+          pesertaB:
+            data.peserta2_id ?? "",
+
+          juriUtama1:
+            juriUtama[0]?.id ?? "",
+
+          juriUtama2:
+            juriUtama[1]?.id ?? "",
+
+          juriUtama3:
+            juriUtama[2]?.id ?? "",
+
+          juriCadangan1:
+            juriCadangan[0]?.id ?? "",
+
+          juriCadangan2:
+            juriCadangan[1]?.id ?? "",
+
+          juriCadangan3:
+            juriCadangan[2]?.id ?? "",
+
+          durasiRonde:
+            data.durasi_ronde_menit ?? "",
         });
-      } catch (err) {
+
+      } catch (err: any) {
+
         console.error(err);
+
         setDialog({
           open: true,
           status: "error",
-          message: t("userError")
+          message:
+            err?.response?.data?.message ??
+            "Gagal mengambil data pertandingan.",
         });
+
       } finally {
-        setLoadingData(false);
+
+        setInitialLoading(false);
+
       }
+
     };
 
-    if (id) fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    loadDetail();
 
-  // ================= HANDLER =================
-  const handleChange = (field: string, value: string) => {
-    setForm(prev => ({
+  }, [
+    pertandinganId,
+  ]);
+
+  const selectedPesertaA =
+    useMemo(() => {
+
+      if (
+        form.pesertaA === ""
+      ) {
+        return null;
+      }
+
+      return (
+        pesertaList.find(
+          (p) =>
+            p.id ===
+            form.pesertaA
+        ) ?? null
+      );
+
+    }, [
+      pesertaList,
+      form.pesertaA,
+    ]);
+
+  const pesertaBList =
+    useMemo(() => {
+
+      if (
+        !selectedPesertaA ||
+        selectedPesertaA.weight ==
+        null
+      ) {
+
+        return pesertaList.filter(
+          (p) =>
+            p.id !==
+            form.pesertaA
+        );
+
+      }
+
+      return pesertaList.filter(
+        (p) => {
+
+          if (
+            p.id ===
+            form.pesertaA
+          ) {
+            return false;
+          }
+
+          if (
+            p.weight ==
+            null
+          ) {
+            return false;
+          }
+
+          const selisih =
+            Math.abs(
+              p.weight -
+              selectedPesertaA.weight
+            );
+
+          return (
+            selisih <=
+            MAX_SELIBIH_BERAT
+          );
+
+        }
+      );
+
+    }, [
+      pesertaList,
+      selectedPesertaA,
+      form.pesertaA,
+    ]);
+
+  const handlePesertaAChange = (
+    value: string
+  ) => {
+
+    const pesertaId =
+      value === ""
+        ? ""
+        : Number(value);
+
+    setForm((prev) => ({
       ...prev,
-      [field]: value === "" ? "" : Number(value)
+
+      pesertaA:
+        pesertaId,
+
+      pesertaB:
+        "",
     }));
+
   };
 
-  // ================= VALIDATION =================
+  const handleNumberChange = (
+    field: keyof FormType,
+    value: string
+  ) => {
+
+    setForm((prev) => ({
+      ...prev,
+
+      [field]:
+        value === ""
+          ? ""
+          : Number(value),
+    }));
+
+  };
+
+  const showError = (
+    message: string
+  ) => {
+
+    setDialog({
+      open: true,
+      status: "error",
+      message,
+    });
+
+  };
+
   const validate = () => {
-    if (form.pesertaA === "" || form.pesertaB === "") {
-      setDialog({
-        open: true,
-        status: "error",
-        message: t("peserta") + " harus dipilih"
-      });
+
+    if (
+      form.pesertaA === "" ||
+      form.pesertaB === ""
+    ) {
+
+      showError(
+        "Peserta pertandingan wajib dipilih."
+      );
+
       return false;
     }
 
-    if (form.pesertaA === form.pesertaB) {
-      setDialog({
-        open: true,
-        status: "error",
-        message: t("peserta") + " tidak boleh sama"
-      });
+    if (
+      form.pesertaA ===
+      form.pesertaB
+    ) {
+
+      showError(
+        "Peserta tidak boleh sama."
+      );
+
       return false;
     }
 
-    const juriIds = [form.juri1, form.juri2, form.juri3];
+    const pesertaA =
+      pesertaList.find(
+        (p) =>
+          p.id ===
+          form.pesertaA
+      );
 
-    if (juriIds.some(j => j === "")) {
-      setDialog({
-        open: true,
-        status: "error",
-        message: t("juri") + " harus dipilih"
-      });
+    const pesertaB =
+      pesertaList.find(
+        (p) =>
+          p.id ===
+          form.pesertaB
+      );
+
+    if (
+      !pesertaA ||
+      !pesertaB
+    ) {
+
+      showError(
+        "Data peserta tidak ditemukan."
+      );
+
       return false;
     }
 
-    const unique = new Set(juriIds);
+    if (
+      pesertaA.weight == null ||
+      pesertaB.weight == null
+    ) {
 
-    if (unique.size !== juriIds.length) {
-      setDialog({
-        open: true,
-        status: "error",
-        message: t("juri") + " tidak boleh sama"
-      });
+      showError(
+        "Berat badan kedua peserta wajib tersedia."
+      );
+
+      return false;
+    }
+
+    const selisihBerat =
+      Math.abs(
+        pesertaA.weight -
+        pesertaB.weight
+      );
+
+    if (
+      selisihBerat >
+      MAX_SELIBIH_BERAT
+    ) {
+
+      showError(
+        `Selisih berat badan peserta maksimal ${MAX_SELIBIH_BERAT} kg. ` +
+        `Selisih peserta saat ini ${selisihBerat} kg.`
+      );
+
+      return false;
+    }
+
+    const juriUtama = [
+      form.juriUtama1,
+      form.juriUtama2,
+      form.juriUtama3,
+    ];
+
+    if (
+      juriUtama.some(
+        (id) => id === ""
+      )
+    ) {
+
+      showError(
+        "3 juri utama wajib dipilih."
+      );
+
+      return false;
+    }
+
+    const juriCadangan = [
+      form.juriCadangan1,
+      form.juriCadangan2,
+      form.juriCadangan3,
+    ];
+
+    if (
+      juriCadangan.some(
+        (id) => id === ""
+      )
+    ) {
+
+      showError(
+        "3 juri cadangan wajib dipilih."
+      );
+
+      return false;
+    }
+
+    const allJuri = [
+      ...juriUtama,
+      ...juriCadangan,
+    ];
+
+    const uniqueJuri =
+      new Set(allJuri);
+
+    if (
+      uniqueJuri.size !==
+      allJuri.length
+    ) {
+
+      showError(
+        "Juri utama dan juri cadangan tidak boleh sama."
+      );
+
+      return false;
+    }
+
+    if (
+      form.durasiRonde !== 2 &&
+      form.durasiRonde !== 3
+    ) {
+      showError(
+        "Durasi ronde hanya boleh 2 atau 3 menit."
+      );
+
+      return false;
+    }
+
+    if (
+      pertandingan &&
+      pertandingan.status !==
+      "belum_mulai"
+    ) {
+
+      showError(
+        "Pertandingan yang sudah dimulai tidak dapat diedit."
+      );
+
       return false;
     }
 
     return true;
   };
 
-  // ================= SUBMIT =================
-  const handleSubmit = async () => {
-    if (!validate()) return;
+  const handleSubmit =
+    async () => {
 
-    if (!original) {
-      setDialog({
-        open: true,
-        status: "error",
-        message: t("userError")
-      });
-      return;
-    }
+      if (!validate()) {
+        return;
+      }
 
-    setLoading(true);
+      setLoading(true);
 
-    try {
-      const payload = {
-        // Field yang memang diubah di form ini.
-        peserta1_id: Number(form.pesertaA),
-        peserta2_id: Number(form.pesertaB),
-        juri: [
-          Number(form.juri1),
-          Number(form.juri2),
-          Number(form.juri3)
-        ],
+      try {
 
-        // Field WAJIB disertakan apa adanya (tidak diubah di form
-        // ini), supaya tidak ter-NULL-kan oleh backend. Lihat
-        // catatan bug #1 di atas — hapus blok ini HANYA jika
-        // backend sudah diperbaiki jadi partial-update.
-        babak: original.babak,
-        durasi_menit: original.durasi_menit,
-        status: original.status,
-        winner_id: original.winner_id,
-        waktu_mulai: original.waktu_mulai,
-        waktu_selesai: original.waktu_selesai,
-        sisa_detik: original.sisa_detik
-      };
+        const payload:
+          UpdatePertandinganRequest =
+        {
+          babak:
+            "penyisihan",
 
-      await updatePertandingan(Number(id), payload);
+          peserta1_id:
+            Number(
+              form.pesertaA
+            ),
 
-      setDialog({
-        open: true,
-        status: "success",
-        message: t("success")
-      });
+          peserta2_id:
+            Number(
+              form.pesertaB
+            ),
 
-      setTimeout(() => {
-        navigate("/penyisihan");
-      }, 1500);
-    } catch (err) {
-      console.error(err);
-      setDialog({
-        open: true,
-        status: "error",
-        message: t("userError")
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+          juri_utama: [
+            Number(
+              form.juriUtama1
+            ),
+            Number(
+              form.juriUtama2
+            ),
+            Number(
+              form.juriUtama3
+            ),
+          ],
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  };
+          juri_cadangan: [
+            Number(
+              form.juriCadangan1
+            ),
+            Number(
+              form.juriCadangan2
+            ),
+            Number(
+              form.juriCadangan3
+            ),
+          ],
 
-  // ================= LOADING =================
-  if (loadingData) {
-    return <Typography p={3}>Loading...</Typography>;
+          durasi_ronde_menit:
+            form.durasiRonde,
+        };
+
+        await updatePertandingan(
+          pertandinganId,
+          payload
+        );
+
+        setDialog({
+          open: true,
+          status: "success",
+          message:
+            "Pertandingan berhasil diperbarui.",
+        });
+
+        setTimeout(() => {
+
+          navigate(
+            "/pertandingan/penyisihan"
+          );
+
+        }, 1500);
+
+      } catch (err: any) {
+
+        console.error(err);
+
+        setDialog({
+          open: true,
+          status: "error",
+          message:
+            err?.response?.data?.message ??
+            "Gagal memperbarui pertandingan.",
+        });
+
+      } finally {
+
+        setLoading(false);
+
+      }
+    };
+
+  const toggleFullscreen =
+    () => {
+
+      if (
+        !document.fullscreenElement
+      ) {
+
+        document.documentElement
+          .requestFullscreen();
+
+      } else {
+
+        document.exitFullscreen();
+
+      }
+
+    };
+
+  if (initialLoading) {
+
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
-  // ================= RENDER =================
+  if (
+    !Number.isInteger(
+      pertandinganId
+    ) ||
+    pertandinganId <= 0 ||
+    !pertandingan
+  ) {
+
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 3,
+        }}
+      >
+        <Alert severity="error">
+          Data pertandingan tidak ditemukan.
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
-    <Box display="flex">
-      <Box sx={{ width: drawerWidth, position: "fixed" }}>
+
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "row",
+        minHeight: "100vh",
+        width: "100vw",
+        overflowX: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          width: drawerWidth,
+          transition:
+            "width 0.3s",
+          position: "fixed",
+        }}
+      >
         <Sidebar />
       </Box>
 
-      <Box ml={`${drawerWidth}px`} p={3} width="100%">
-        {/* HEADER */}
-        <Box display="flex" justifyContent="space-between" mb={3}>
-          <Typography fontSize={26}>{pageTitle}</Typography>
+      <Box
+        flexGrow={1}
+        ml={`${drawerWidth}px`}
+        padding={3}
+        fontFamily="Roboto, sans-serif"
+        sx={{
+          background:
+            "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+        }}
+      >
 
-          <Box display="flex" gap={1}>
-            <Tooltip title={t("fullscreen")}>
-              <IconButton onClick={toggleFullscreen}>
-                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
+
+          <Typography
+            variant="h2"
+            fontWeight={600}
+            fontSize={26}
+          >
+            {pageTitle}
+          </Typography>
+
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1}
+          >
+
+            <Tooltip
+              title={t("fullscreen")}
+            >
+
+              <IconButton
+                size="medium"
+                onClick={
+                  toggleFullscreen
+                }
+              >
+
+                {isFullscreen ? (
+                  <FullscreenExitIcon />
+                ) : (
+                  <FullscreenIcon />
+                )}
+
               </IconButton>
+
             </Tooltip>
+
             <UserMenu />
+
           </Box>
+
         </Box>
 
         <Divider />
 
-        {/* FORM */}
-        <Card sx={{ mt: 3 }}>
+        {pertandingan.status !==
+          "belum_mulai" && (
+
+            <Alert
+              severity="warning"
+              sx={{
+                mt: 3,
+              }}
+            >
+              Pertandingan sudah
+              dimulai sehingga data
+              pertandingan tidak dapat
+              diedit.
+            </Alert>
+
+          )}
+
+        <Card
+          sx={{
+            mt: 4,
+            borderRadius: 3,
+          }}
+        >
+
           <CardContent>
-            <Box display="flex" flexDirection="column" gap={3}>
 
-              {/* PESERTA A */}
+            <Box
+              display="flex"
+              flexDirection="column"
+              gap={2}
+              mt={2}
+              ml={4}
+              mr={4}
+            >
+
+              <Typography
+                variant="body2"
+                color="error"
+                mb={2}
+              >
+                * Wajib diisi
+              </Typography>
+
               <TextField
                 select
-                label="Peserta A"
-                value={form.pesertaA}
-                onChange={(e) => handleChange("pesertaA", e.target.value)}
+                label="Peserta 1"
+                value={
+                  form.pesertaA
+                }
+                onChange={(e) =>
+                  handlePesertaAChange(
+                    e.target.value
+                  )
+                }
+                fullWidth
+                disabled={
+                  pertandingan.status !==
+                  "belum_mulai"
+                }
               >
-                <MenuItem value="">-- Select --</MenuItem>
-                {pesertaList.map(p => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-              </TextField>
 
-              {/* PESERTA B */}
-              <TextField
-                select
-                label="Peserta B"
-                value={form.pesertaB}
-                onChange={(e) => handleChange("pesertaB", e.target.value)}
-              >
-                <MenuItem value="">-- Select --</MenuItem>
-                {pesertaList.map(p => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                {pesertaList.map(
+                  (p) => (
 
-              {/* JURI */}
-              {[1, 2, 3].map((num) => (
-                <TextField
-                  key={num}
-                  select
-                  label={`Juri ${num}`}
-                  value={form[`juri${num}` as keyof FormType]}
-                  onChange={(e) =>
-                    handleChange(`juri${num}`, e.target.value)
-                  }
-                >
-                  <MenuItem value="">-- Select --</MenuItem>
-                  {juriList.map(j => (
-                    <MenuItem key={j.id} value={j.id}>
-                      {j.name}
+                    <MenuItem
+                      key={p.id}
+                      value={p.id}
+                    >
+                      {p.name}
+
+                      {p.weight != null
+                        ? ` - ${p.weight} kg`
+                        : ""}
                     </MenuItem>
-                  ))}
-                </TextField>
-              ))}
 
-              {/* BUTTON */}
-              <Box display="flex" justifyContent="flex-end" gap={2}>
+                  )
+                )}
+
+              </TextField>
+
+              <TextField
+                select
+                label="Peserta 2"
+                value={
+                  form.pesertaB
+                }
+                onChange={(e) =>
+                  handleNumberChange(
+                    "pesertaB",
+                    e.target.value
+                  )
+                }
+                fullWidth
+                disabled={
+                  form.pesertaA === "" ||
+                  pertandingan.status !==
+                  "belum_mulai"
+                }
+                helperText={
+                  selectedPesertaA?.weight != null
+                    ? `Peserta 2 harus memiliki berat maksimal ±${MAX_SELIBIH_BERAT} kg dari Peserta 1 (${selectedPesertaA.weight} kg).`
+                    : "Pilih Peserta 1 terlebih dahulu"
+                }
+              >
+
+                {pesertaBList.length === 0 ? (
+
+                  <MenuItem
+                    disabled
+                    value=""
+                  >
+                    Tidak ada peserta
+                    dengan selisih
+                    berat maksimal
+                    5 kg
+                  </MenuItem>
+
+                ) : (
+
+                  pesertaBList.map(
+                    (p) => (
+
+                      <MenuItem
+                        key={p.id}
+                        value={p.id}
+                      >
+                        {p.name}
+
+                        {p.weight != null
+                          ? ` - ${p.weight} kg`
+                          : ""}
+                      </MenuItem>
+
+                    )
+                  )
+
+                )}
+
+              </TextField>
+
+              {selectedPesertaA?.weight !=
+                null && (
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                  >
+                    Selisih berat badan
+                    antara Peserta 1
+                    dan Peserta 2
+                    maksimal{" "}
+                    <strong>
+                      {
+                        MAX_SELIBIH_BERAT
+                      } kg
+                    </strong>.
+                  </Typography>
+
+                )}
+
+              <Typography
+                variant="h6"
+                sx={{
+                  mt: 2,
+                  fontWeight: 600,
+                }}
+              >
+                Juri Utama
+              </Typography>
+
+              {[1, 2, 3].map(
+                (num) => {
+
+                  const field =
+                    `juriUtama${num}` as keyof FormType;
+
+                  return (
+
+                    <TextField
+                      key={field}
+                      select
+                      label={`Juri Utama ${num}`}
+                      value={
+                        form[field]
+                      }
+                      onChange={(e) =>
+                        handleNumberChange(
+                          field,
+                          e.target.value
+                        )
+                      }
+                      fullWidth
+                      disabled={
+                        pertandingan.status !==
+                        "belum_mulai"
+                      }
+                    >
+
+                      {juriList.map(
+                        (j) => (
+
+                          <MenuItem
+                            key={j.id}
+                            value={j.id}
+                          >
+                            {j.name}
+                          </MenuItem>
+
+                        )
+                      )}
+
+                    </TextField>
+
+                  );
+
+                }
+              )}
+
+              <Typography
+                variant="h6"
+                sx={{
+                  mt: 2,
+                  fontWeight: 600,
+                }}
+              >
+                Juri Cadangan
+              </Typography>
+
+              {[1, 2, 3].map(
+                (num) => {
+
+                  const field =
+                    `juriCadangan${num}` as keyof FormType;
+
+                  return (
+
+                    <TextField
+                      key={field}
+                      select
+                      label={`Juri Cadangan ${num}`}
+                      value={
+                        form[field]
+                      }
+                      onChange={(e) =>
+                        handleNumberChange(
+                          field,
+                          e.target.value
+                        )
+                      }
+                      fullWidth
+                      disabled={
+                        pertandingan.status !==
+                        "belum_mulai"
+                      }
+                    >
+
+                      {juriList.map(
+                        (j) => (
+
+                          <MenuItem
+                            key={j.id}
+                            value={j.id}
+                          >
+                            {j.name}
+                          </MenuItem>
+
+                        )
+                      )}
+
+                    </TextField>
+
+                  );
+
+                }
+              )}
+
+              <Typography
+                variant="h6"
+                sx={{
+                  mt: 2,
+                  fontWeight: 600,
+                }}
+              >
+                Durasi Ronde
+              </Typography>
+
+              <TextField
+                select
+                label="Durasi setiap ronde"
+                value={
+                  form.durasiRonde
+                }
+                onChange={(e) =>
+                  handleNumberChange(
+                    "durasiRonde",
+                    e.target.value
+                  )
+                }
+                fullWidth
+                disabled={
+                  pertandingan.status !==
+                  "belum_mulai"
+                }
+              >
+
+                <MenuItem value={2}>
+                  2 menit
+                </MenuItem>
+
+                <MenuItem value={3}>
+                  3 menit
+                </MenuItem>
+
+              </TextField>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  mt: 1,
+                }}
+              >
+                Setiap pertandingan
+                terdiri dari maksimal
+                3 ronde. Durasi setiap
+                ronde adalah 2–3 menit.
+                Selisih berat badan
+                kedua peserta maksimal
+                5 kg.
+              </Typography>
+
+              <Box
+                display="flex"
+                justifyContent="flex-end"
+                gap={2}
+                mt={2}
+              >
+
                 <Button
                   variant="contained"
                   color="error"
-                  onClick={handleSubmit}
-                  disabled={loading}
+                  onClick={
+                    handleSubmit
+                  }
+                  disabled={
+                    loading ||
+                    pertandingan.status !==
+                    "belum_mulai"
+                  }
                 >
-                  {loading ? "Updating..." : "Update"}
+
+                  {loading
+                    ? "Menyimpan..."
+                    : "Simpan Perubahan"}
+
                 </Button>
 
                 <Button
                   variant="contained"
                   color="warning"
-                  onClick={() => navigate("/penyisihan")}
+                  onClick={() =>
+                    navigate(
+                      "/pertandingan/penyisihan"
+                    )
+                  }
                 >
-                  Back
+                  Kembali
                 </Button>
+
               </Box>
 
             </Box>
+
           </CardContent>
+
         </Card>
 
-        {/* DIALOG */}
-        <Dialog open={dialog.open}>
+        <Dialog
+          open={
+            dialog.open
+          }
+          onClose={() => {
+
+            if (!loading) {
+
+              setDialog({
+                open: false,
+                status:
+                  "success",
+                message:
+                  "",
+              });
+
+            }
+
+          }}
+        >
+
           <DialogTitle>
-            {dialog.status === "success" ? t("success") : t("error")}
+
+            {dialog.status ===
+              "success"
+              ? "Berhasil"
+              : "Error"}
+
           </DialogTitle>
+
           <DialogContent>
-            <Typography>{dialog.message}</Typography>
+
+            <Typography>
+              {
+                dialog.message
+              }
+            </Typography>
+
           </DialogContent>
+
           <DialogActions>
-            <Button onClick={() => setDialog({ open: false, status: "success", message: "" })}>
+
+            <Button
+              onClick={() =>
+                setDialog({
+                  open: false,
+                  status:
+                    "success",
+                  message:
+                    "",
+                })
+              }
+            >
               OK
             </Button>
+
           </DialogActions>
+
         </Dialog>
+
       </Box>
+
     </Box>
   );
 }

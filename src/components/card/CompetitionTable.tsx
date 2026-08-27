@@ -9,6 +9,7 @@ import {
     TableRow,
     Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 import type { JuriPertandingan } from "../../types/pertandingan";
 
@@ -22,114 +23,157 @@ interface CompetitionTableProps {
 
 const CompetitionTable: React.FC<CompetitionTableProps> = ({
     competitionTable,
-}) => (
-    <Paper
-        sx={{
-            p: 2,
-            borderRadius: 1,
-            overflowX: "auto",
-        }}
-    >
-        <Typography
-            fontSize={18}
-            color="text.secondary"
-            mb={1}
+}) => {
+    const { t } = useTranslation();
+
+    return (
+        <Paper
+            sx={{
+                p: 2,
+                borderRadius: 1,
+                overflowX: "auto",
+            }}
         >
-            List Competition
-        </Typography>
-
-        <TableContainer>
-            <Table
-                size="small"
-                sx={{
-                    fontSize: 18,
-                    border: 1,
-                    borderColor: "divider",
-                    borderCollapse: "collapse",
-                }}
+            <Typography
+                fontSize={18}
+                color="text.secondary"
+                mb={1}
             >
-                <TableHead>
-                    <TableRow>
-                        <TableCell
-                            sx={{
-                                fontSize: 15,
-                                width: 40,
-                                border: 1,
-                                borderColor: "divider",
-                            }}
-                        >
-                            No
-                        </TableCell>
+                {t("listMatches")}
+            </Typography>
 
-                        <TableCell
-                            sx={{
-                                fontSize: 15,
-                                border: 1,
-                                borderColor: "divider",
-                            }}
-                        >
-                            Competition
-                        </TableCell>
+            <TableContainer>
+                <Table
+                    size="small"
+                    sx={{
+                        fontSize: 18,
+                        border: 1,
+                        borderColor: "divider",
+                        borderCollapse: "collapse",
+                    }}
+                >
+                    <TableHead>
+                        <TableRow>
+                            <TableCell
+                                sx={{
+                                    fontSize: 15,
+                                    width: 40,
+                                    border: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
+                                {t("no")}
+                            </TableCell>
 
-                        <TableCell
-                            sx={{
-                                fontSize: 15,
-                                border: 1,
-                                borderColor: "divider",
-                            }}
-                        >
-                            Juri
-                        </TableCell>
-                    </TableRow>
-                </TableHead>
+                            <TableCell
+                                sx={{
+                                    fontSize: 15,
+                                    border: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
+                                {t("peserta")}
+                            </TableCell>
 
-                <TableBody>
-                    {competitionTable.map(
-                        ({ no, name, juri }) => (
-                            <TableRow key={no}>
-                                <TableCell
-                                    sx={{
-                                        fontSize: 15,
-                                        border: 1,
-                                        borderColor: "divider",
-                                    }}
-                                >
-                                    {no}
-                                </TableCell>
+                            <TableCell
+                                sx={{
+                                    fontSize: 15,
+                                    border: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
+                                {t("mainJudge")}
+                            </TableCell>
 
-                                <TableCell
-                                    sx={{
-                                        fontSize: 15,
-                                        border: 1,
-                                        borderColor: "divider",
-                                    }}
-                                >
-                                    {name}
-                                </TableCell>
+                            <TableCell
+                                sx={{
+                                    fontSize: 15,
+                                    border: 1,
+                                    borderColor: "divider",
+                                }}
+                            >
+                                {t("reserveJudge")}
+                            </TableCell>
+                        </TableRow>
+                    </TableHead>
 
-                                <TableCell
-                                    sx={{
-                                        fontSize: 15,
-                                        border: 1,
-                                        borderColor: "divider",
-                                    }}
-                                >
-                                    {juri.length > 0
-                                        ? juri
-                                              .map(
-                                                  (j) =>
-                                                      j.full_name
-                                              )
-                                              .join(", ")
-                                        : "-"}
-                                </TableCell>
-                            </TableRow>
-                        )
-                    )}
-                </TableBody>
-            </Table>
-        </TableContainer>
-    </Paper>
-);
+                    <TableBody>
+                        {competitionTable.map(
+                            ({ no, name, juri }) => {
+                                const juriUtama = juri
+                                    .filter(
+                                        (j) =>
+                                            j.peran === "utama"
+                                    )
+                                    .map(
+                                        (j) => j.full_name
+                                    )
+                                    .join(", ");
+
+                                const juriCadangan = juri
+                                    .filter(
+                                        (j) =>
+                                            j.peran === "cadangan"
+                                    )
+                                    .map(
+                                        (j) => j.full_name
+                                    )
+                                    .join(", ");
+
+                                return (
+                                    <TableRow key={no}>
+                                        <TableCell
+                                            sx={{
+                                                fontSize: 15,
+                                                border: 1,
+                                                borderColor:
+                                                    "divider",
+                                            }}
+                                        >
+                                            {no}
+                                        </TableCell>
+
+                                        <TableCell
+                                            sx={{
+                                                fontSize: 15,
+                                                border: 1,
+                                                borderColor:
+                                                    "divider",
+                                            }}
+                                        >
+                                            {name}
+                                        </TableCell>
+
+                                        <TableCell
+                                            sx={{
+                                                fontSize: 15,
+                                                border: 1,
+                                                borderColor:
+                                                    "divider",
+                                            }}
+                                        >
+                                            {juriUtama || "-"}
+                                        </TableCell>
+
+                                        <TableCell
+                                            sx={{
+                                                fontSize: 15,
+                                                border: 1,
+                                                borderColor:
+                                                    "divider",
+                                            }}
+                                        >
+                                            {juriCadangan || "-"}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            }
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Paper>
+    );
+};
 
 export default CompetitionTable;

@@ -17,17 +17,14 @@ import EditJuri from './components/datamaster/Juri/EditJuriModal';
 import UserManagement from './components/datamaster/usermanagement/UserManagement';
 import CreateUser from './components/datamaster/usermanagement/CreateUserModal';
 import EditUser from './components/datamaster/usermanagement/EditUserModal';
-import HitungTurnamen from './components/hitungTurnamen/Controller';
+import ControllerMatch from './components/hitungTurnamen/Controller';
+import ControllerEmpty from './components/hitungTurnamen/ControllerEmpty';
 import Penyisihan from './components/turnament/penyisihan/Penyisihan';
 import CreatePenyisihan from './components/turnament/penyisihan/CreatePenyisihanModal';
 import Quarter from './components/turnament/perempat/quarter';
-import CreateQuarter from './components/turnament/perempat/CreateQuarterModal';
 import Semi from './components/turnament/semi/Semi';
-import CreateSemi from './components/turnament/semi/CreateSemiModal';
 import Final from './components/turnament/final/Final';
-import CreateFinal from './components/turnament/final/CreateFinalModal';
 import EnambelasBesar from './components/turnament/enambelasbesar/enambelasBesar';
-import CreateEnambelasBesar from './components/turnament/enambelasbesar/CreateEnambelasModal';
 import ScoreDetail from './components/score/ScoreDetail';
 import Scorepenyisihan from './components/score/Scorepenyisihan';
 import Score16Besar from './components/score/Score16Besar';
@@ -35,6 +32,7 @@ import Scorefinal from './components/score/Scorefinal';
 import Scoreperempat from './components/score/Scoreperempat';
 import ScoresemiFinal from './components/score/ScoresemiFinal';
 import Profile from './components/profile/profile';
+import EditPenyisihan from './components/turnament/penyisihan/EditPenyisihanModal';
 
 function App() {
   return (
@@ -71,18 +69,15 @@ function App() {
         {/* pertandingan */}
         <Route path="/pertandingan/penyisihan" element={<Penyisihan />} />
         <Route path="/pertandingan/penyisihan/create-penyisihan" element={<CreatePenyisihan />} />
+        <Route path="/pertandingan/penyisihan/edit-penyisihan/:id" element={<EditPenyisihan />} />
         <Route path="/pertandingan/perempat-final" element={<Quarter />} />
-        <Route path="/pertandingan/perempat-final/create-perempat-final" element={<CreateQuarter />} />
         <Route path="/pertandingan/semi-final" element={<Semi />} />
-        <Route path="/pertandingan/semi-final/create-semi-final" element={<CreateSemi />} />
         <Route path="/pertandingan/final" element={<Final />} />
-        <Route path="/pertandingan/final/create-final" element={<CreateFinal />} />
         <Route path="/pertandingan/enambelasbesar" element={<EnambelasBesar />} />
-        <Route path="/pertandingan/enambelasbesar/create-enambelasbesar" element={<CreateEnambelasBesar />} />
 
         {/* hitungTurnamen */}
-        <Route path="/hitungTurnamen/controller" element={<HitungTurnamen />} />
-        <Route path="/hitungTurnamen/controller/:id" element={<HitungTurnamen />} />
+        <Route path="/hitungTurnamen" element={<ControllerEmpty />} />
+        <Route path="/hitungTurnamen/controller/:id" element={<ControllerMatch />} />
 
         {/* skor */}
         <Route path="/skor/penyisihan" element={<Scorepenyisihan />} />

@@ -45,8 +45,12 @@ export default function CreatePesertaModal() {
     }, [t]);
 
     useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-    }, [pageTitle]);
+        document.title =
+            `${t("turnamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
+            }`;
+    }, [pageTitle, t]);
 
     const fieldErrors = useMemo(
         () => ({
@@ -116,14 +120,17 @@ export default function CreatePesertaModal() {
                             <Typography variant="body2" color="error" mb={2}>
                                 {t("requiredNote")}
                             </Typography>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {t("pesertaTitle")}
+                            </Typography>
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("name")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 17.4 }}>
-                                    *
-                                </Typography>
                                 <TextField
+                                    label={t("name")}
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     fullWidth
@@ -133,14 +140,9 @@ export default function CreatePesertaModal() {
                                 />
                             </Box>
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("regional")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 14.7 }}>
-                                    *
-                                </Typography>
                                 <TextField
                                     select
+                                    label={t("regional")}
                                     value={regional}
                                     onChange={(e) => setRegional(e.target.value)}
                                     fullWidth
@@ -156,13 +158,8 @@ export default function CreatePesertaModal() {
                                 </TextField>
                             </Box >
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("weight")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 16.4 }}>
-                                    *
-                                </Typography>
                                 <TextField
+                                    label={t("weight")}
                                     value={weight}
                                     onChange={(e) => {
                                         const value = e.target.value.replace(",", ".");

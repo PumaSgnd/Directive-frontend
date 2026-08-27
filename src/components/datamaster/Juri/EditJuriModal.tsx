@@ -71,8 +71,12 @@ export default function EditJuriModal() {
   }, [id, t, navigate, setPageTitle]);
 
   useEffect(() => {
-    document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-  }, [pageTitle]);
+        document.title =
+            `${t("turnamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
+            }`;
+    }, [pageTitle, t]);
 
   const handleSave = async () => {
     try {

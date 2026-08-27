@@ -1,638 +1,1492 @@
-import { useEffect, useState, useRef, useCallback } from "react";
-import axios from "axios";
 import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
+
+import {
+    Alert,
     Box,
+    Button,
     Card,
     CardContent,
+    Chip,
+    CircularProgress,
     Divider,
-    Typography,
-    Button,
     IconButton,
+    Menu,
+    MenuItem,
     Tooltip,
-    Alert
+    Typography,
 } from "@mui/material";
+
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
-import Sidebar from "../bar/Sidebar";
-import UserMenu from "../header/UserMenu";
+import StopIcon from "@mui/icons-material/Stop";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
-import { useParams, useNavigate } from "react-router-dom";
+
+import { capitalizeWords } from "../../utils/format";
+
+import {
+    useNavigate,
+    useParams,
+} from "react-router-dom";
+
+import { usePertandingan } from "../../hooks/usePertandingan";
+import { usePenilaian } from "../../hooks/usePenilaian";
+import { usePertandinganTimer } from "../../hooks/usePertandinganTimer";
+
+import {
+    JenisPenilaian,
+} from "../../types/penilaian";
+
+import {
+    AlasanSelesai,
+} from "../../types/pertandingan";
+
+import Sidebar from "../bar/Sidebar";
+import UserMenu from "../header/UserMenu";
 import { useStore } from "../../hooks/useStore";
 import { useAuthStore } from "../../stores/authStore";
-
-import {
-    fetchPertandinganById,
-    startPertandingan,
-    pausePertandingan,
-    resumePertandingan,
-    finishPertandingan
-} from "../../api/turnament/pertandingan/pertandingan";
-
-import {
-    createPenilaian,
-    undoPenilaian,
-    fetchScoreboard,
-    fetchScorePerJuri
-} from "../../api/turnament/penilaian/penilaian";
-
-import { JenisPenilaian } from "../../types/penilaian";
-import { Pertandingan } from "../../types/pertandingan";
-import { Scoreboard, ScorePerJuri } from "../../types/penilaian";
 import { useTranslation } from "react-i18next";
 
-const PLUS_JENIS: { label: string; jenis: JenisPenilaian }[] = [
-    { label: "1", jenis: "PUKULAN" },
-    { label: "2", jenis: "TENDANGAN" },
-    { label: "3", jenis: "JATUHAN" },
-];
+const PLUS_JENIS: {
+    label: string;
+    jenis: JenisPenilaian;
+}[] = [
+        {
+            label: "1",
+            jenis: "PUKULAN",
+        },
+        {
+            label: "2",
+            jenis: "TENDANGAN",
+        },
+        {
+            label: "3",
+            jenis: "JATUHAN",
+        },
+    ];
 
-const MINUS_JENIS: { label: string; jenis: JenisPenilaian }[] = [
-    { label: "-1", jenis: "TEGURAN1" },
-    { label: "-2", jenis: "TEGURAN2" },
-    { label: "-5", jenis: "PERINGATAN1" },
-    { label: "-10", jenis: "PERINGATAN2" },
-];
+const MINUS_JENIS: {
+    label: string;
+    jenis: JenisPenilaian;
+}[] = [
+        {
+            label: "-1",
+            jenis: "TEGURAN1",
+        },
+        {
+            label: "-2",
+            jenis: "TEGURAN2",
+        },
+        {
+            label: "-5",
+            jenis: "PERINGATAN1",
+        },
+        {
+            label: "-10",
+            jenis: "PERINGATAN2",
+        },
+    ];
 
-const POLL_INTERVAL_MS = 3000;
-
-/**
- * Ambil pesan error dengan aman tanpa memakai tipe `any`.
- */
-const getErrorMessage = (err: unknown, fallback: string): string => {
-    if (axios.isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        return data?.message ?? fallback;
-    }
-    if (err instanceof Error) {
-        return err.message || fallback;
-    }
-    return fallback;
-};
-
-export default function HitungTurnamen() {
+const ControllerMatch = () => {
     const { id } = useParams<{ id?: string }>();
     const navigate = useNavigate();
-    const pertandinganId = id ? Number(id) : null;
-    const { t } =
-            useTranslation();
+    const { t } = useTranslation();
 
-    const { sidebarOpen, pageTitle, setPageTitle } = useStore();
+    const pertandinganId = Number(id);
+
+    const hasMatch =
+        pertandinganId !== null &&
+        Number.isInteger(pertandinganId) &&
+        pertandinganId > 0;
+
+    const {
+        sidebarOpen,
+        pageTitle,
+        setPageTitle
+    } = useStore();
+
+    const {
+        user,
+    } = useAuthStore();
+
     const drawerWidth = sidebarOpen ? 260 : 30;
 
-    const [pertandingan, setPertandingan] = useState<Pertandingan | null>(null);
-    const [scoreboard, setScoreboard] = useState<Scoreboard | null>(null);
-    const [scorePerJuri, setScorePerJuri] = useState<ScorePerJuri[]>([]);
-
-    const [sisaDetik, setSisaDetik] = useState<number | null>(null);
-
-    // -----------------------------------------------------------------
-    // Nilai turunan dari `pertandingan`. Sengaja diletakkan di atas,
-    // SEBELUM semua handler di bawah memakainya (const tidak di-hoist).
-    // -----------------------------------------------------------------
-    const { user } = useAuthStore();
     const myJuriId = user?.id;
 
-    // Skor milik juri yang SEDANG LOGIN saja — bukan total gabungan semua juri.
-    const myScorePeserta1 =
-        scoreboard?.peserta1.juri.find((j) => j.id === myJuriId)?.total ?? 0;
+    const {
+        activePertandingan,
+        loading: pertandinganLoading,
 
-    const myScorePeserta2 =
-        scoreboard?.peserta2.juri.find((j) => j.id === myJuriId)?.total ?? 0;
-    const daftarJuri = pertandingan?.juri ?? [];
-    const hasMatch = !!pertandinganId;
-    const status = pertandingan?.status;
-    const disabledInput = !hasMatch || status !== "berlangsung";
+        loadDetail,
 
-    const [submitting, setSubmitting] = useState(false);
-    const [controlLoading, setControlLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+        startPertandingan,
+        pausePertandingan,
+        resumePertandingan,
 
-    const controllerRef = useRef<HTMLDivElement | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+        finishRonde,
+        finishPertandingan,
+        replaceJudge,
+    } = usePertandingan();
 
-    // ================= FULLSCREEN =================
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            if (controllerRef.current?.requestFullscreen) {
-                controllerRef.current.requestFullscreen();
-            } else if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
+    const {
+        scoreboard,
+        history,
+        scorePerJuri,
+
+        loading: penilaianLoading,
+        error: penilaianError,
+
+        reload: reloadPenilaian,
+
+        submit,
+        undo,
+    } = usePenilaian(pertandinganId);
+
+    const getBabakLabel = (babak: string) => {
+        const labels: Record<string, string> = {
+            penyisihan: t("penyisihan"),
+            enam_belas_besar: t("enambelasBesar"),
+            perempat_final: t("perempat"),
+            semi_final: t("semiFinal"),
+            final: t("final"),
+        };
+
+        return labels[babak] ?? babak;
+    };
+
+    useEffect(() => {
+        if (!activePertandingan) return;
+
+        setPageTitle(
+            getBabakLabel(activePertandingan.babak)
+        );
+    }, [
+        activePertandingan,
+        setPageTitle,
+        t,
+    ]);
+
+    const [actionLoading, setActionLoading] =
+        useState(false);
+
+    const [error, setError] =
+        useState<string | null>(null);
+
+    const [
+        isFullscreen,
+        setIsFullscreen,
+    ] = useState(false);
+
+    const [
+        controllerElement,
+        setControllerElement,
+    ] = useState<HTMLDivElement | null>(null);
+
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                if (controllerElement) {
+                    await controllerElement.requestFullscreen();
+                }
+            } else {
+                await document.exitFullscreen();
             }
-        } else if (document.exitFullscreen) {
-            document.exitFullscreen();
+        } catch (err) {
+            console.error(
+                "Fullscreen error:",
+                err
+            );
         }
     };
 
     useEffect(() => {
-        const handleChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
+        const handleFullscreenChange = () => {
+            setIsFullscreen(
+                !!document.fullscreenElement
+            );
         };
-        document.addEventListener("fullscreenchange", handleChange);
+
+        document.addEventListener(
+            "fullscreenchange",
+            handleFullscreenChange
+        );
+
         return () => {
-            document.removeEventListener("fullscreenchange", handleChange);
+            document.removeEventListener(
+                "fullscreenchange",
+                handleFullscreenChange
+            );
         };
     }, []);
 
-    // ================= TITLE =================
-    useEffect(() => {
-        setPageTitle(t("hitungTurnamen"));
-    }, [t, setPageTitle]);
-
-    useEffect(() => {
-        document.title = `Turnament Pencak Silat${pageTitle ? " | " + pageTitle : ""}`;
-    }, [pageTitle]);
-
-    const lastStatusRef = useRef<string | undefined>(undefined);
-
-    // ================= FETCH DATA (poll berkala) =================
-    const loadData = useCallback(async () => {
-        if (!pertandinganId) return;
-
+    const handleTimeUp = useCallback(async () => {
         try {
-            const [detail, board, perJuri] = await Promise.all([
-                fetchPertandinganById(pertandinganId),
-                fetchScoreboard(pertandinganId),
-                fetchScorePerJuri(pertandinganId),
-            ]);
-
-            setPertandingan(detail);
-            setScoreboard(board ?? null);
-            setScorePerJuri(perJuri);
-
-            const statusBerubah = lastStatusRef.current !== detail.status;
-            lastStatusRef.current = detail.status;
-
-            if (detail.status !== "berlangsung" || statusBerubah) {
-                setSisaDetik(detail.sisa_detik);
-            }
-
+            setActionLoading(true);
             setError(null);
-        } catch (err) {
+
+            await finishRonde(
+                pertandinganId,
+                {
+                    alasan: "waktu_habis",
+                    sisa_detik: 0,
+                }
+            );
+
+            await Promise.all([
+                loadDetail(pertandinganId),
+                reloadPenilaian(),
+            ]);
+        } catch (err: unknown) {
             console.error(err);
-            setError("Gagal memuat data pertandingan.");
+
+            setError(t("roundNotFinished"));
+        } finally {
+            setActionLoading(false);
         }
-    }, [pertandinganId]);
+    }, [
+        pertandinganId,
+        finishRonde,
+        loadDetail,
+        reloadPenilaian,
+        t
+    ]);
+
+    const {
+        timeLeft,
+        formattedTime,
+        running,
+
+        setTimer,
+        startTimer,
+        stopTimer,
+        syncTimer,
+    } = usePertandinganTimer({
+        pertandinganId,
+        autoSync: true,
+        onTimeUp: handleTimeUp,
+    });
 
     useEffect(() => {
-        if (!pertandinganId) return;
+        if (!hasMatch) return;
 
-        loadData();
-        const interval = setInterval(loadData, POLL_INTERVAL_MS);
-        return () => clearInterval(interval);
-    }, [loadData, pertandinganId]);
+        loadDetail(pertandinganId);
+    }, [
+        pertandinganId,
+        hasMatch,
+        loadDetail,
+    ]);
 
-    // ================= COUNTDOWN LOKAL =================
-    useEffect(() => {
-        if (status !== "berlangsung") return;
-        if (sisaDetik === null || sisaDetik <= 0) return;
+    const status =
+        activePertandingan?.status ??
+        "belum_mulai";
 
-        const timeout = setTimeout(() => {
-            setSisaDetik((prev) => (prev !== null ? Math.max(prev - 1, 0) : prev));
-        }, 1000);
+    const pertandinganSelesai =
+        status === "selesai";
 
-        return () => clearTimeout(timeout);
-    }, [sisaDetik, status]);
+    const pertandinganBerlangsung =
+        status === "berlangsung";
 
-    const formatTime = (detik: number | null) => {
-        if (detik === null) return "--:--";
-        const m = Math.floor(detik / 60);
-        const s = detik % 60;
-        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    const pertandinganPause =
+        status === "pause";
+
+    const peserta1 =
+        scoreboard?.peserta1;
+
+    const peserta2 =
+        scoreboard?.peserta2;
+
+    const peserta1Id =
+        activePertandingan?.peserta1_id;
+
+    const peserta2Id =
+        activePertandingan?.peserta2_id;
+
+    const rondeAktif =
+        activePertandingan?.ronde_aktif ??
+        1;
+
+    const totalRonde =
+        activePertandingan?.total_ronde ??
+        3;
+
+    const daftarJuri =
+        activePertandingan?.juri ?? [];
+
+    const juriUtamaAktif = useMemo(() => {
+        return daftarJuri.filter(
+            (juri) =>
+                juri.peran === "utama" &&
+                Boolean(juri.aktif)
+        );
+    }, [daftarJuri]);
+
+    const juriCadanganAktif = useMemo(() => {
+        return daftarJuri.filter(
+            (juri) =>
+                juri.peran === "cadangan" &&
+                Boolean(juri.aktif)
+        );
+    }, [daftarJuri]);
+
+    const [judgeMenuAnchor, setJudgeMenuAnchor] =
+        useState<null | HTMLElement>(null);
+
+    const judgeMenuOpen =
+        Boolean(judgeMenuAnchor);
+
+    const handleOpenJudgeMenu = (
+        event: React.MouseEvent<HTMLButtonElement>
+    ) => {
+        setJudgeMenuAnchor(event.currentTarget);
     };
 
-    // ================= HANDLER SKOR =================
-    const handleScore = async (side: "left" | "right", jenis: JenisPenilaian) => {
-        if (!pertandingan || !pertandinganId) return;
+    const handleCloseJudgeMenu = () => {
+        setJudgeMenuAnchor(null);
+    };
 
-        const pesertaId = side === "left"
-            ? pertandingan.peserta1_id
-            : pertandingan.peserta2_id;
+    const handleReplaceJudge = async (
+        juriUtamaId: number,
+        juriCadanganId: number
+    ) => {
+        try {
+            setActionLoading(true);
+            setError(null);
 
+            await replaceJudge(
+                pertandinganId,
+                {
+                    juri_utama_id: juriUtamaId,
+                    juri_cadangan_id: juriCadanganId,
+                }
+            );
+
+            handleCloseJudgeMenu();
+
+            await Promise.all([
+                loadDetail(pertandinganId),
+                reloadPenilaian(),
+            ]);
+        } catch (err: unknown) {
+            console.error(
+                "Gagal mengganti juri:",
+                err
+            );
+
+            setError(t("judgeReplacementError"));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const getJuriScore = (
+        juriId: number,
+        pesertaId: number | null | undefined
+    ) => {
         if (!pesertaId) {
-            setError("Peserta belum lengkap.");
-            return;
+            return 0;
         }
 
-        setSubmitting(true);
-        setError(null);
+        const found =
+            scorePerJuri.find(
+                (score) =>
+                    score.juri_id === juriId &&
+                    score.peserta_id === pesertaId
+            );
 
-        try {
-            await createPenilaian({
-                pertandingan_id: pertandinganId,
-                peserta_id: pesertaId,
-                jenis,
-            });
-            await loadData();
-        } catch (err: unknown) {
-            setError(getErrorMessage(err, "Gagal menyimpan penilaian."));
-        } finally {
-            setSubmitting(false);
-        }
+        return found
+            ? Number(found.total)
+            : 0;
     };
 
-    // ================= UNDO =================
-    const handleUndo = async () => {
-        if (!pertandinganId) return;
+    const myScorePeserta1 =
+        scoreboard?.peserta1?.juri?.find(
+            (juri) =>
+                juri.id === myJuriId
+        )?.total ?? 0;
 
-        setSubmitting(true);
-        setError(null);
+    const myScorePeserta2 =
+        scoreboard?.peserta2?.juri?.find(
+            (juri) =>
+                juri.id === myJuriId
+        )?.total ?? 0;
 
-        try {
-            await undoPenilaian(pertandinganId);
-            await loadData();
-        } catch (err: unknown) {
-            setError(getErrorMessage(err, "Gagal undo penilaian."));
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // ================= KONTROL PERTANDINGAN =================
     const handleStart = async () => {
-        if (!pertandinganId) return;
-        setControlLoading(true);
-        setError(null);
-
         try {
-            await startPertandingan(pertandinganId);
-            await loadData();
-        } catch {
-            // Kemungkinan besar juri lain sudah start duluan — sinkronkan
-            // saja tanpa menakut-nakuti user dengan pesan error.
-            await loadData();
+            setActionLoading(true);
+            setError(null);
+
+            const result =
+                await startPertandingan(
+                    pertandinganId
+                );
+
+            setTimer(
+                result.sisa_detik ??
+                Number(
+                    result.durasi_ronde_menit
+                ) * 60
+            );
+
+            startTimer();
+
+            await Promise.all([
+                loadDetail(
+                    pertandinganId
+                ),
+                reloadPenilaian(),
+            ]);
+        } catch (err: unknown) {
+            console.error(err);
+
+            setError(t("startMatchError"));
         } finally {
-            setControlLoading(false);
+            setActionLoading(false);
         }
     };
 
     const handlePause = async () => {
-        if (!pertandinganId || sisaDetik === null) return;
-        setControlLoading(true);
-        setError(null);
-
         try {
-            await pausePertandingan(pertandinganId, sisaDetik);
-            await loadData();
+            setActionLoading(true);
+            setError(null);
+
+            stopTimer();
+
+            await syncTimer();
+
+            await pausePertandingan(
+                pertandinganId,
+                timeLeft
+            );
+
+            await loadDetail(
+                pertandinganId
+            );
         } catch (err: unknown) {
-            setError(getErrorMessage(err, "Gagal pause pertandingan."));
+            console.error(err);
+
+            setError(t("pauseMatchError"));
         } finally {
-            setControlLoading(false);
+            setActionLoading(false);
         }
     };
 
     const handleResume = async () => {
-        if (!pertandinganId) return;
-        setControlLoading(true);
-        setError(null);
-
         try {
-            await resumePertandingan(pertandinganId);
-            await loadData();
-        } catch (err: unknown) {
-            setError(getErrorMessage(err, "Gagal melanjutkan pertandingan."));
-        } finally {
-            setControlLoading(false);
-        }
-    };
+            setActionLoading(true);
+            setError(null);
 
-    const handleFinish = async () => {
-        if (!pertandinganId) return;
-        setControlLoading(true);
-        setError(null);
+            const result =
+                await resumePertandingan(
+                    pertandinganId
+                );
 
-        try {
-            await finishPertandingan(pertandinganId);
-            await loadData();
-        } catch (err: unknown) {
-            setError(
-                getErrorMessage(
-                    err,
-                    "Gagal menyelesaikan pertandingan (mungkin skor masih seri)."
-                )
+            setTimer(
+                result.sisa_detik ??
+                timeLeft
             );
+
+            startTimer();
+
+            await Promise.all([
+                loadDetail(
+                    pertandinganId
+                ),
+                reloadPenilaian(),
+            ]);
+        } catch (err: unknown) {
+            console.error(err);
+
+            setError(t("resumeMatchError"));
         } finally {
-            setControlLoading(false);
+            setActionLoading(false);
         }
     };
 
-    // ================= TOGGLE PLAY/PAUSE =================
     const handleToggleTimer = () => {
-        if (status === "belum_mulai") {
+        if (
+            status ===
+            "belum_mulai"
+        ) {
             handleStart();
-        } else if (status === "berlangsung") {
+            return;
+        }
+
+        if (
+            status ===
+            "berlangsung"
+        ) {
             handlePause();
-        } else if (status === "pause") {
+            return;
+        }
+
+        if (
+            status ===
+            "pause"
+        ) {
             handleResume();
         }
     };
 
-    const timerDisplay =
-        status === "belum_mulai"
-            ? formatTime((pertandingan?.durasi_menit ?? 0) * 60)
-            : formatTime(sisaDetik);
+    const handleScore = async (
+        pesertaId: number | undefined,
+        jenis: JenisPenilaian
+    ) => {
+        if (!pesertaId) {
+            return;
+        }
 
-    // ================= HELPER: skor per juri per peserta =================
-    const getJuriScore = (juriId: number, pesertaId: number | null) => {
-        if (!pesertaId) return 0;
-        const found = scorePerJuri.find(
-            (s) => s.juri_id === juriId && s.peserta_id === pesertaId
-        );
-        return found ? Number(found.total) : 0;
+        if (
+            !pertandinganBerlangsung ||
+            penilaianLoading ||
+            actionLoading
+        ) {
+            return;
+        }
+
+        try {
+            await submit(
+                pesertaId,
+                jenis
+            );
+        } catch (err) {
+            console.error(err);
+        }
     };
 
-    // ================= RENDER =================
+    const handleUndo = async () => {
+        if (
+            !pertandinganBerlangsung ||
+            history.length === 0
+        ) {
+            return;
+        }
+
+        try {
+            setActionLoading(true);
+
+            await undo();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleFinishRonde = async (
+        alasan: Exclude<
+            AlasanSelesai,
+            "bye"
+        >
+    ) => {
+        try {
+            setActionLoading(true);
+            setError(null);
+
+            stopTimer();
+
+            await syncTimer();
+
+            await finishRonde(
+                pertandinganId,
+                {
+                    alasan,
+                    sisa_detik: timeLeft,
+                }
+            );
+
+            await Promise.all([
+                loadDetail(
+                    pertandinganId
+                ),
+                reloadPenilaian(),
+            ]);
+        } catch (err) {
+            console.error(err);
+
+            setError(t("roundNotFinished"));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleFinishPertandingan =
+        async () => {
+            try {
+                setActionLoading(true);
+                setError(null);
+
+                stopTimer();
+
+                await syncTimer();
+
+                await finishPertandingan(
+                    pertandinganId,
+                    "waktu_habis"
+                );
+
+                await Promise.all([
+                    loadDetail(
+                        pertandinganId
+                    ),
+                    reloadPenilaian(),
+                ]);
+            } catch (err) {
+                console.error(err);
+
+                setError(t("finishMatchError"));
+            } finally {
+                setActionLoading(false);
+            }
+        };
+
+    if (
+        pertandinganLoading &&
+        !activePertandingan
+    ) {
+        return (
+            <Box
+                sx={{
+                    minHeight: "100vh",
+                    display: "flex",
+                    justifyContent:
+                        "center",
+                    alignItems:
+                        "center",
+                }}
+            >
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (!activePertandingan) {
+        return (
+            <Alert severity="warning">
+                Data pertandingan tidak ditemukan.
+            </Alert>
+        );
+    }
+
     return (
-        <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
-            <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
+        <Box
+            ref={setControllerElement}
+            sx={{
+                display: "flex",
+                flexDirection: "row",
+                minHeight: "100vh",
+                width: "100vw",
+                overflowX: "hidden",
+            }}
+        >
+            <Box
+                sx={{
+                    width: drawerWidth,
+                    transition: "width 0.3s",
+                    position: "fixed",
+                }}
+            >
                 <Sidebar />
             </Box>
+
             <Box
                 flexGrow={1}
                 ml={`${drawerWidth}px`}
                 padding={3}
                 fontFamily="Roboto, sans-serif"
-                bgcolor="linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)"
-                sx={{ display: "flex", flexDirection: "column" }}
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    background:
+                        "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+                }}
             >
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                    <Typography variant="h2" fontWeight={600} fontSize={26}>
-                        {pageTitle}
+                <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={3}
+                >
+                    <Typography
+                        variant="h2"
+                        fontWeight={600}
+                        fontSize={26}
+                    >
+                        {t(pageTitle)}
                     </Typography>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Tooltip title="Fullscreen">
-                            <IconButton size="medium" aria-label="Toggle fullscreen view" onClick={toggleFullscreen}>
-                                {isFullscreen ? <FullscreenExitIcon fontSize="medium" /> : <FullscreenIcon fontSize="medium" />}
+
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
+                    >
+                        <Tooltip title={t("fullscreen")}>
+                            <IconButton
+                                size="medium"
+                                aria-label={t("toggleFullscreen")}
+                                onClick={
+                                    toggleFullscreen
+                                }
+                            >
+                                {isFullscreen ? (
+                                    <FullscreenExitIcon fontSize="medium" />
+                                ) : (
+                                    <FullscreenIcon fontSize="medium" />
+                                )}
                             </IconButton>
                         </Tooltip>
+
                         <UserMenu />
                     </Box>
                 </Box>
+
                 <Divider />
-                {!hasMatch ? (
-                    <Card
-                        sx={{
-                            mt: 5,
-                            flexGrow: 1,
-                            display: "flex",
-                        }}
-                    >
-                        <CardContent
-                            sx={{
-                                flexGrow: 1,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
+
+                {(error ||
+                    penilaianError) && (
+                        <Alert
+                            severity="error"
+                            sx={{ mt: 2 }}
                         >
-                            <Box
-                                display="flex"
-                                flexDirection="column"
-                                alignItems="center"
-                                justifyContent="center"
-                                gap={2}
-                                textAlign="center"
-                                maxWidth={500}
-                            >
-                                <Typography variant="h6" color="text.secondary">
-                                    Belum ada pertandingan yang dipilih
-                                </Typography>
+                            {error ??
+                                penilaianError}
+                        </Alert>
+                    )}
+
+                {status === "belum_mulai" && (
+                    <Alert
+                        severity="info"
+                        sx={{ mt: 2 }}
+                    >
+                        {t("matchNotStarted")}
+                    </Alert>
+                )}
+
+                {status === "pause" && (
+                    <Alert
+                        severity="warning"
+                        sx={{ mt: 2 }}
+                    >
+                        {t("matchPaused")}
+                    </Alert>
+                )}
+
+                {status === "selesai" && (
+                    <Alert
+                        severity="success"
+                        sx={{ mt: 2 }}
+                    >
+                        {t("matchFinished")}
+                    </Alert>
+                )}
+
+                <Card
+                    sx={{
+                        mt: 4,
+                        flexGrow: 1,
+                    }}
+                >
+                    <CardContent>
+                        <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            mb={3}
+                        >
+                            <Box>
+                                <Box
+                                    display="flex"
+                                    alignItems="start"
+                                    justifyContent="start"
+                                    gap={1}
+                                >
+                                    <Typography
+                                        variant="h5"
+                                        fontWeight={700}
+                                    >
+                                        {capitalizeWords(activePertandingan.peserta1_name ?? "-")}
+                                    </Typography>
+
+                                    <Typography
+                                        fontWeight={700}
+                                        color="error.main"
+                                        variant="h5"
+                                    >
+                                        VS
+                                    </Typography>
+
+                                    <Typography
+                                        variant="h5"
+                                        fontWeight={700}
+                                    >
+                                        {capitalizeWords(activePertandingan.peserta2_name ?? "-")}
+                                    </Typography>
+                                </Box>
 
                                 <Typography
                                     variant="body2"
                                     color="text.secondary"
+                                    mt={0.5}
                                 >
-                                    Buka halaman Data Pertandingan, lalu pilih salah satu
-                                    pertandingan untuk mulai menghitung skor.
+                                    {t("round")}:{" "}
+                                    {getBabakLabel(activePertandingan.babak)}
+                                    {" • "}
+                                    {t("roundLabel")}{" "}
+                                    {rondeAktif}
+                                    {" / "}
+                                    {totalRonde}
                                 </Typography>
+                            </Box>
+
+                            <Box
+                                display="flex"
+                                alignItems="center"
+                                gap={1}
+                            >
+                                <Chip
+                                    label={
+                                        status === "belum_mulai"
+                                            ? t("belum_mulai")
+                                            : status === "berlangsung"
+                                                ? t("berlangsung")
+                                                : status === "pause"
+                                                    ? t("pause")
+                                                    : t("selesai")
+                                    }
+                                    color={
+                                        status === "selesai"
+                                            ? "success"
+                                            : status === "berlangsung"
+                                                ? "primary"
+                                                : status === "pause"
+                                                    ? "warning"
+                                                    : "default"
+                                    }
+                                />
 
                                 <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => navigate("/pertandingan/penyisihan")}
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={
+                                        handleOpenJudgeMenu
+                                    }
+                                    disabled={
+                                        actionLoading ||
+                                        juriCadanganAktif.length === 0
+                                    }
                                 >
-                                    Ke Data Pertandingan
+                                    {t("judgeReplacement")}
                                 </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <>
-                        {error && (
-                            <Alert severity="error" sx={{ mt: 2 }}>
-                                {error}
-                            </Alert>
-                        )}
 
-                        {status === "belum_mulai" && (
-                            <Alert severity="info" sx={{ mt: 2 }}>
-                                Pertandingan belum dimulai. Tekan tombol Play untuk memulai.
-                            </Alert>
-                        )}
-
-                        {status === "pause" && (
-                            <Alert severity="warning" sx={{ mt: 2 }}>
-                                Pertandingan sedang di-pause.
-                            </Alert>
-                        )}
-
-                        {status === "selesai" && (
-                            <Alert severity="success" sx={{ mt: 2 }}>
-                                Pertandingan sudah selesai. Input skor dinonaktifkan.
-                            </Alert>
-                        )}
-
-                        <Card ref={controllerRef} sx={{ mt: 5, flexGrow: 1 }}>
-                            <CardContent>
-                                {/* TOTAL SKOR */}
-                                <Box display="flex" flexDirection="column" gap={2} mb={3}>
-                                    <Box display="flex" gap={2}>
-                                        <Box flex={1} bgcolor="#e0e0e0" p={3} borderRadius={2} textAlign="center">
-                                            <Typography>{pertandingan?.peserta1_name ?? "Peserta 1"}</Typography>
-                                            <Typography fontSize={32} fontWeight="bold">
-                                                {scoreboard?.peserta1.total ?? 0}
-                                            </Typography>
-                                        </Box>
-                                        <Box flex={1} bgcolor="#e0e0e0" p={3} borderRadius={2} textAlign="center">
-                                            <Typography>{pertandingan?.peserta2_name ?? "Peserta 2"}</Typography>
-                                            <Typography fontSize={32} fontWeight="bold">
-                                                {scoreboard?.peserta2.total ?? 0}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-
-                                    <Box display="flex" gap={2}>
-                                        {daftarJuri.length === 0 && (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Belum ada juri ditunjuk untuk pertandingan ini.
-                                            </Typography>
-                                        )}
-                                        {daftarJuri.map((j, idx) => (
-                                            <Box key={j.id} flex={1} bgcolor="#e0e0e0" p={3} borderRadius={2}>
-                                                <Typography textAlign="center" mb={1}>
-                                                    {j.full_name || `Juri ${idx + 1}`}
-                                                </Typography>
-                                                <Box display="flex" justifyContent="center" gap={2}>
-                                                    <Typography fontSize={28} fontWeight="bold">
-                                                        {getJuriScore(j.id, pertandingan?.peserta1_id ?? null)}
-                                                    </Typography>
-                                                    <Typography fontSize={28} fontWeight="bold">
-                                                        {getJuriScore(j.id, pertandingan?.peserta2_id ?? null)}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                </Box>
-
-                                {/* CONTROLLER */}
-                                <Box bgcolor="black" p={2} borderRadius={2} ml={2}>
-
-                                    {/* + BUTTON */}
-                                    <Box display="grid" gridTemplateColumns="repeat(6, 1fr)" gap={1} mb={1}>
-                                        {PLUS_JENIS.map(({ label, jenis }) => (
-                                            <Button
-                                                key={`left-${jenis}`}
-                                                disabled={disabledInput || submitting}
-                                                onClick={() => handleScore("left", jenis)}
-                                                sx={{ bgcolor: "#f44336", color: "#fff", fontSize: 20 }}
-                                            >
-                                                {label}
-                                            </Button>
-                                        ))}
-                                        {PLUS_JENIS.map(({ label, jenis }) => (
-                                            <Button
-                                                key={`right-${jenis}`}
-                                                disabled={disabledInput || submitting}
-                                                onClick={() => handleScore("right", jenis)}
-                                                sx={{ bgcolor: "#2196f3", color: "#fff", fontSize: 20 }}
-                                            >
-                                                {label}
-                                            </Button>
-                                        ))}
-                                    </Box>
-
-                                    {/* - BUTTON */}
-                                    <Box display="grid" gridTemplateColumns="repeat(8, 1fr)" gap={1} mb={2}>
-                                        {MINUS_JENIS.map(({ label, jenis }) => (
-                                            <Button
-                                                key={`left-${jenis}`}
-                                                disabled={disabledInput || submitting}
-                                                onClick={() => handleScore("left", jenis)}
-                                                sx={{ bgcolor: "#ef5350", color: "#fff" }}
-                                            >
-                                                {label}
-                                            </Button>
-                                        ))}
-                                        {MINUS_JENIS.map(({ label, jenis }) => (
-                                            <Button
-                                                key={`right-${jenis}`}
-                                                disabled={disabledInput || submitting}
-                                                onClick={() => handleScore("right", jenis)}
-                                                sx={{ bgcolor: "#42a5f5", color: "#fff" }}
-                                            >
-                                                {label}
-                                            </Button>
-                                        ))}
-                                    </Box>
-
-                                    {/* BOTTOM */}
-                                    <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
-
-                                        {/* LEFT — X = undo input terakhir juri ini */}
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            <Tooltip title="Undo input terakhir milik juri ini">
-                                                <span>
-                                                    <Button
-                                                        onClick={handleUndo}
-                                                        disabled={submitting || status !== "berlangsung"}
-                                                        sx={{ bgcolor: "red", color: "#fff" }}
-                                                    >
-                                                        X
-                                                    </Button>
-                                                </span>
-                                            </Tooltip>
-                                            <Box sx={{
-                                                border: "2px solid red",
-                                                color: "#fff",
-                                                px: 4, py: 1,
-                                                fontSize: 20,
-                                                borderRadius: 1
-                                            }}>
-                                                {myScorePeserta1 ?? 0}
-                                            </Box>
-                                        </Box>
-
-                                        {/* CENTER — Toggle Play/Pause + Finish */}
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            {status !== "selesai" ? (
-                                                <Button
-                                                    onClick={handleToggleTimer}
-                                                    disabled={controlLoading}
-                                                    startIcon={status === "berlangsung" ? <PauseIcon /> : <PlayArrowIcon />}
+                                <Menu
+                                    anchorEl={judgeMenuAnchor}
+                                    open={judgeMenuOpen}
+                                    onClose={handleCloseJudgeMenu}
+                                >
+                                    {juriUtamaAktif.map(
+                                        (juri, index) => (
+                                            <Box key={juri.id}>
+                                                <MenuItem
+                                                    disabled
                                                     sx={{
-                                                        bgcolor: status === "berlangsung" ? "orange" : "green",
-                                                        color: "#fff",
-                                                        px: 4,
-                                                        fontSize: 18,
-                                                        minWidth: 130
+                                                        fontWeight: 700,
+                                                        color: "text.primary",
                                                     }}
                                                 >
-                                                    {timerDisplay}
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    disabled
-                                                    sx={{ bgcolor: "grey.700", color: "#fff", px: 4, fontSize: 18 }}
-                                                >
-                                                    Selesai
-                                                </Button>
-                                            )}
+                                                    {t("replace")}{" "}
+                                                    {capitalizeWords(
+                                                        juri.full_name ??
+                                                        `${t("juri")} ${index + 1}`
+                                                    )}
+                                                </MenuItem>
 
-                                            {(status === "berlangsung" || status === "pause") && (
-                                                <Button
-                                                    variant="contained"
-                                                    color="secondary"
-                                                    onClick={handleFinish}
-                                                    disabled={controlLoading}
-                                                    sx={{ minWidth: 100 }}
-                                                >
-                                                    Selesaikan
-                                                </Button>
-                                            )}
-                                        </Box>
+                                                {juriCadanganAktif.map(
+                                                    (cadangan) => (
+                                                        <MenuItem
+                                                            key={`${juri.id}-${cadangan.id}`}
+                                                            onClick={() =>
+                                                                handleReplaceJudge(
+                                                                    juri.id,
+                                                                    cadangan.id
+                                                                )
+                                                            }
+                                                            disabled={actionLoading}
+                                                            sx={{
+                                                                pl: 4,
+                                                            }}
+                                                        >
+                                                            ↳{" "}
+                                                            {capitalizeWords(
+                                                                cadangan.full_name ??
+                                                                `${t("reserveJudge")} ${cadangan.id}`
+                                                            )}
+                                                        </MenuItem>
+                                                    )
+                                                )}
 
-                                        {/* RIGHT — X = undo input terakhir juri ini */}
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            <Box sx={{
-                                                border: "2px solid #2196f3",
-                                                color: "#fff",
-                                                px: 4, py: 1,
-                                                fontSize: 20,
-                                                borderRadius: 1
-                                            }}>
-                                                {myScorePeserta2 ?? 0}
+                                                <Divider />
                                             </Box>
-                                            <Tooltip title="Undo input terakhir milik juri ini">
-                                                <span>
-                                                    <Button
-                                                        onClick={handleUndo}
-                                                        disabled={submitting || status !== "berlangsung"}
-                                                        sx={{ bgcolor: "#2196f3", color: "#fff" }}
-                                                    >
-                                                        X
-                                                    </Button>
-                                                </span>
-                                            </Tooltip>
-                                        </Box>
+                                        )
+                                    )}
 
+                                    {juriUtamaAktif.length === 0 && (
+                                        <MenuItem disabled>
+                                            {t("noActiveMainJudge")}
+                                        </MenuItem>
+                                    )}
+
+                                    {juriCadanganAktif.length === 0 && (
+                                        <MenuItem disabled>
+                                            {t("noActiveReserveJudge")}
+                                        </MenuItem>
+                                    )}
+                                </Menu>
+                            </Box>
+                        </Box>
+
+                        <Box
+                            display="flex"
+                            flexDirection="column"
+                            gap={2}
+                            mb={3}
+                        >
+                            <Box
+                                display="flex"
+                                gap={2}
+                            >
+                                <Box
+                                    flex={1}
+                                    bgcolor="#e0e0e0"
+                                    p={3}
+                                    borderRadius={2}
+                                    textAlign="center"
+                                >
+                                    <Typography
+                                        fontWeight={600}
+                                    >
+                                        {
+                                            activePertandingan.peserta1_name
+                                        }
+                                    </Typography>
+
+                                    <Typography
+                                        fontSize={48}
+                                        fontWeight="bold"
+                                    >
+                                        {
+                                            peserta1?.total ??
+                                            0
+                                        }
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    flex={1}
+                                    bgcolor="#e0e0e0"
+                                    p={3}
+                                    borderRadius={2}
+                                    textAlign="center"
+                                >
+                                    <Typography
+                                        fontWeight={600}
+                                    >
+                                        {
+                                            activePertandingan.peserta2_name
+                                        }
+                                    </Typography>
+
+                                    <Typography
+                                        fontSize={48}
+                                        fontWeight="bold"
+                                    >
+                                        {
+                                            peserta2?.total ??
+                                            0
+                                        }
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Box
+                                display="flex"
+                                gap={2}
+                            >
+                                {juriUtamaAktif.length === 0 && (
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        {t("noActiveMainJudge")}
+                                    </Typography>
+                                )}
+
+                                {juriUtamaAktif.map(
+                                    (
+                                        juri,
+                                        index
+                                    ) => (
+                                        <Box
+                                            key={
+                                                juri.id
+                                            }
+                                            flex={1}
+                                            bgcolor="#eeeeee"
+                                            p={2}
+                                            borderRadius={2}
+                                        >
+                                            <Typography
+                                                textAlign="center"
+                                                fontWeight={600}
+                                                mb={1}
+                                            >
+                                                {capitalizeWords(juri.full_name ||
+                                                    `Juri ${index + 1}`)}
+                                            </Typography>
+
+                                            <Box
+                                                display="flex"
+                                                justifyContent="center"
+                                                alignItems="center"
+                                                gap={3}
+                                            >
+                                                <Typography
+                                                    fontSize={
+                                                        28
+                                                    }
+                                                    fontWeight="bold"
+                                                >
+                                                    {getJuriScore(
+                                                        juri.id,
+                                                        peserta1Id
+                                                    )}
+                                                </Typography>
+
+                                                <Typography
+                                                    color="text.secondary"
+                                                >
+                                                    -
+                                                </Typography>
+
+                                                <Typography
+                                                    fontSize={
+                                                        28
+                                                    }
+                                                    fontWeight="bold"
+                                                >
+                                                    {getJuriScore(
+                                                        juri.id,
+                                                        peserta2Id
+                                                    )}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    )
+                                )}
+                            </Box>
+                        </Box>
+
+                        <Box
+                            bgcolor="black"
+                            p={2}
+                            borderRadius={2}
+                            mt={3}
+                        >
+                            <Box
+                                display="grid"
+                                gridTemplateColumns={{
+                                    xs: "repeat(2, 1fr)",
+                                    sm: "repeat(6, 1fr)",
+                                }}
+                                gap={1}
+                                mb={1}
+                            >
+                                {PLUS_JENIS.map(
+                                    ({
+                                        label,
+                                        jenis,
+                                    }) => (
+                                        <Button
+                                            key={`left-${jenis}`}
+                                            disabled={
+                                                !pertandinganBerlangsung ||
+                                                penilaianLoading ||
+                                                actionLoading
+                                            }
+                                            onClick={() =>
+                                                handleScore(
+                                                    peserta1Id,
+                                                    jenis
+                                                )
+                                            }
+                                            sx={{
+                                                bgcolor:
+                                                    "#f44336",
+                                                color:
+                                                    "#fff",
+                                                fontSize: 20,
+                                                fontWeight: 700,
+                                                minHeight: 52,
+                                                "&:hover": {
+                                                    bgcolor:
+                                                        "#d32f2f",
+                                                },
+                                            }}
+                                        >
+                                            {label}
+                                        </Button>
+                                    )
+                                )}
+
+                                {PLUS_JENIS.map(
+                                    ({
+                                        label,
+                                        jenis,
+                                    }) => (
+                                        <Button
+                                            key={`right-${jenis}`}
+                                            disabled={
+                                                !pertandinganBerlangsung ||
+                                                penilaianLoading ||
+                                                actionLoading
+                                            }
+                                            onClick={() =>
+                                                handleScore(
+                                                    peserta2Id,
+                                                    jenis
+                                                )
+                                            }
+                                            sx={{
+                                                bgcolor:
+                                                    "#2196f3",
+                                                color:
+                                                    "#fff",
+                                                fontSize: 20,
+                                                fontWeight: 700,
+                                                minHeight: 52,
+                                                "&:hover": {
+                                                    bgcolor:
+                                                        "#1976d2",
+                                                },
+                                            }}
+                                        >
+                                            {label}
+                                        </Button>
+                                    )
+                                )}
+                            </Box>
+
+                            <Box
+                                display="grid"
+                                gridTemplateColumns={{
+                                    xs: "repeat(2, 1fr)",
+                                    sm: "repeat(8, 1fr)",
+                                }}
+                                gap={1}
+                                mb={2}
+                            >
+                                {MINUS_JENIS.map(
+                                    ({
+                                        label,
+                                        jenis,
+                                    }) => (
+                                        <Button
+                                            key={`left-${jenis}`}
+                                            disabled={
+                                                !pertandinganBerlangsung ||
+                                                penilaianLoading ||
+                                                actionLoading
+                                            }
+                                            onClick={() =>
+                                                handleScore(
+                                                    peserta1Id,
+                                                    jenis
+                                                )
+                                            }
+                                            sx={{
+                                                bgcolor:
+                                                    "#ef5350",
+                                                color:
+                                                    "#fff",
+                                                fontWeight: 700,
+                                                minHeight: 45,
+                                            }}
+                                        >
+                                            {label}
+                                        </Button>
+                                    )
+                                )}
+
+                                {MINUS_JENIS.map(
+                                    ({
+                                        label,
+                                        jenis,
+                                    }) => (
+                                        <Button
+                                            key={`right-${jenis}`}
+                                            disabled={
+                                                !pertandinganBerlangsung ||
+                                                penilaianLoading ||
+                                                actionLoading
+                                            }
+                                            onClick={() =>
+                                                handleScore(
+                                                    peserta2Id,
+                                                    jenis
+                                                )
+                                            }
+                                            sx={{
+                                                bgcolor:
+                                                    "#42a5f5",
+                                                color:
+                                                    "#fff",
+                                                fontWeight: 700,
+                                                minHeight: 45,
+                                            }}
+                                        >
+                                            {label}
+                                        </Button>
+                                    )
+                                )}
+                            </Box>
+
+                            <Box
+                                display="flex"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                flexWrap="wrap"
+                                gap={2}
+                            >
+                                <Box
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                >
+                                    <Tooltip title={t("undoLastScore")}>
+                                        <span>
+                                            <Button
+                                                onClick={
+                                                    handleUndo
+                                                }
+                                                disabled={
+                                                    !pertandinganBerlangsung ||
+                                                    penilaianLoading ||
+                                                    actionLoading ||
+                                                    history.length === 0
+                                                }
+                                                sx={{
+                                                    bgcolor:
+                                                        "red",
+                                                    color:
+                                                        "#fff",
+                                                    minWidth: 50,
+                                                    minHeight: 45,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                X
+                                            </Button>
+                                        </span>
+                                    </Tooltip>
+
+                                    <Box
+                                        sx={{
+                                            border:
+                                                "2px solid red",
+                                            color:
+                                                "#fff",
+                                            px: 4,
+                                            py: 1,
+                                            fontSize: 20,
+                                            borderRadius: 1,
+                                            minWidth: 75,
+                                            textAlign:
+                                                "center",
+                                        }}
+                                    >
+                                        {
+                                            myScorePeserta1
+                                        }
                                     </Box>
                                 </Box>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
+
+                                <Box
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                >
+                                    {!pertandinganSelesai ? (
+                                        <Button
+                                            onClick={
+                                                handleToggleTimer
+                                            }
+                                            disabled={
+                                                actionLoading
+                                            }
+                                            startIcon={
+                                                status ===
+                                                    "berlangsung" ? (
+                                                    <PauseIcon />
+                                                ) : (
+                                                    <PlayArrowIcon />
+                                                )
+                                            }
+                                            sx={{
+                                                bgcolor:
+                                                    status ===
+                                                        "berlangsung"
+                                                        ? "orange"
+                                                        : "green",
+                                                color:
+                                                    "#fff",
+                                                px: 4,
+                                                fontSize: 18,
+                                                minWidth: 150,
+                                                minHeight: 50,
+                                                fontWeight: 700,
+                                                "&:hover": {
+                                                    bgcolor:
+                                                        status ===
+                                                            "berlangsung"
+                                                            ? "#ef6c00"
+                                                            : "#2e7d32",
+                                                },
+                                            }}
+                                        >
+                                            {formattedTime}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            disabled
+                                            sx={{
+                                                bgcolor:
+                                                    "grey.700",
+                                                color:
+                                                    "#fff",
+                                                px: 4,
+                                                fontSize: 18,
+                                                minWidth: 150,
+                                                minHeight: 50,
+                                            }}
+                                        >
+                                            {t("finished")}
+                                        </Button>
+                                    )}
+
+                                    {pertandinganBerlangsung && (
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={() =>
+                                                handleFinishRonde(
+                                                    "waktu_habis"
+                                                )
+                                            }
+                                            disabled={
+                                                actionLoading
+                                            }
+                                            sx={{
+                                                minHeight: 50,
+                                            }}
+                                        >
+                                            {t("roundFinished")}
+                                        </Button>
+                                    )}
+
+                                    {(
+                                        pertandinganBerlangsung ||
+                                        pertandinganPause
+                                    ) && (
+                                            <Button
+                                                variant="contained"
+                                                color="error"
+                                                startIcon={
+                                                    <StopIcon />
+                                                }
+                                                onClick={
+                                                    handleFinishPertandingan
+                                                }
+                                                disabled={
+                                                    actionLoading
+                                                }
+                                                sx={{
+                                                    minHeight: 50,
+                                                }}
+                                            >
+                                                {actionLoading ? (
+                                                    <CircularProgress
+                                                        size={22}
+                                                        color="inherit"
+                                                    />
+                                                ) : (
+                                                    t("finishMatch")
+                                                )}
+                                            </Button>
+                                        )}
+                                </Box>
+
+                                <Box
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                >
+                                    <Box
+                                        sx={{
+                                            border:
+                                                "2px solid #2196f3",
+                                            color:
+                                                "#fff",
+                                            px: 4,
+                                            py: 1,
+                                            fontSize: 20,
+                                            borderRadius: 1,
+                                            minWidth: 75,
+                                            textAlign:
+                                                "center",
+                                        }}
+                                    >
+                                        {
+                                            myScorePeserta2
+                                        }
+                                    </Box>
+
+                                    <Tooltip title="Undo input terakhir milik juri ini">
+                                        <span>
+                                            <Button
+                                                onClick={
+                                                    handleUndo
+                                                }
+                                                disabled={
+                                                    !pertandinganBerlangsung ||
+                                                    penilaianLoading ||
+                                                    actionLoading ||
+                                                    history.length === 0
+                                                }
+                                                sx={{
+                                                    bgcolor:
+                                                        "#2196f3",
+                                                    color:
+                                                        "#fff",
+                                                    minWidth: 50,
+                                                    minHeight: 45,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                X
+                                            </Button>
+                                        </span>
+                                    </Tooltip>
+                                </Box>
+                            </Box>
+                        </Box>
+                    </CardContent>
+                </Card>
             </Box>
         </Box>
     );
-}
+};
+
+export default ControllerMatch;
