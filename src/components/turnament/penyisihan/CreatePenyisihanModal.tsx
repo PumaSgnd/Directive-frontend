@@ -145,10 +145,12 @@ export default function CreatePenyisihan() {
         );
 
         return () => {
+
             document.removeEventListener(
                 "fullscreenchange",
                 handleChange
             );
+
         };
 
     }, []);
@@ -160,9 +162,7 @@ export default function CreatePenyisihan() {
     useEffect(() => {
 
         setPageTitle(
-            t("create") +
-            " " +
-            t("penyisihan")
+            `${t("create")} ${t("penyisihan")}`
         );
 
     }, [
@@ -231,10 +231,13 @@ export default function CreatePenyisihan() {
                 !selectedPesertaA ||
                 selectedPesertaA.weight == null
             ) {
+
                 return pesertaList.filter(
                     (p) =>
-                        p.id !== form.pesertaA
+                        p.id !==
+                        form.pesertaA
                 );
+
             }
 
             return pesertaList.filter(
@@ -256,7 +259,7 @@ export default function CreatePenyisihan() {
                     const selisih =
                         Math.abs(
                             p.weight -
-                            selectedPesertaA.weight!
+                            selectedPesertaA.weight
                         );
 
                     return (
@@ -292,7 +295,8 @@ export default function CreatePenyisihan() {
             pesertaA:
                 pesertaId,
 
-            pesertaB: "",
+            pesertaB:
+                "",
         }));
 
     };
@@ -349,7 +353,7 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "Peserta pertandingan wajib dipilih."
+                t("participantRequired")
             );
 
             return false;
@@ -361,7 +365,7 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "Peserta tidak boleh sama."
+                t("participantSame")
             );
 
             return false;
@@ -387,7 +391,7 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "Data peserta tidak ditemukan."
+                t("participantNotFound")
             );
 
             return false;
@@ -403,7 +407,7 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "Berat badan kedua peserta wajib tersedia."
+                t("participantWeightRequired")
             );
 
             return false;
@@ -421,8 +425,20 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                `Selisih berat badan peserta maksimal ${MAX_SELIBIH_BERAT} kg. ` +
-                `Selisih peserta saat ini ${selisihBerat} kg.`
+                t(
+                    "maximumWeightDifference",
+                    {
+                        max:
+                            MAX_SELIBIH_BERAT,
+                    }
+                ) +
+                ` ${t(
+                    "currentWeightDifference",
+                    {
+                        difference:
+                            selisihBerat,
+                    }
+                )}`
             );
 
             return false;
@@ -445,7 +461,9 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "3 juri utama wajib dipilih."
+                t(
+                    "threeMainJudgesRequired"
+                )
             );
 
             return false;
@@ -468,7 +486,9 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "3 juri cadangan wajib dipilih."
+                t(
+                    "threeReserveJudgesRequired"
+                )
             );
 
             return false;
@@ -492,7 +512,7 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "Juri utama dan juri cadangan tidak boleh sama."
+                t("judgesCannotBeSame")
             );
 
             return false;
@@ -508,7 +528,7 @@ export default function CreatePenyisihan() {
         ) {
 
             showError(
-                "Durasi ronde hanya boleh 2 atau 3 menit."
+                t("roundDurationInvalid")
             );
 
             return false;
@@ -583,7 +603,7 @@ export default function CreatePenyisihan() {
                 open: true,
                 status: "success",
                 message:
-                    "Pertandingan berhasil dibuat.",
+                    t("matchCreated"),
             });
 
             setTimeout(() => {
@@ -603,7 +623,7 @@ export default function CreatePenyisihan() {
                 status: "error",
                 message:
                     err?.response?.data?.message ??
-                    "Gagal membuat pertandingan.",
+                    t("createMatchError"),
             });
 
         } finally {
@@ -670,6 +690,7 @@ export default function CreatePenyisihan() {
                         "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
                 }}
             >
+
                 <Box
                     display="flex"
                     justifyContent="space-between"
@@ -741,14 +762,24 @@ export default function CreatePenyisihan() {
                             <Typography
                                 variant="body2"
                                 color="error"
-                                mb={2}
                             >
-                                * Wajib diisi
+                                {t("requiredNote")}
+                            </Typography>
+
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {t("participant")}
                             </Typography>
 
                             <TextField
                                 select
-                                label="Peserta 1"
+                                label={t(
+                                    "participant1"
+                                )}
                                 value={
                                     form.pesertaA
                                 }
@@ -767,10 +798,13 @@ export default function CreatePenyisihan() {
                                             key={p.id}
                                             value={p.id}
                                         >
+
                                             {p.name}
+
                                             {p.weight != null
                                                 ? ` - ${p.weight} kg`
                                                 : ""}
+
                                         </MenuItem>
 
                                     )
@@ -780,7 +814,9 @@ export default function CreatePenyisihan() {
 
                             <TextField
                                 select
-                                label="Peserta 2"
+                                label={t(
+                                    "participant2"
+                                )}
                                 value={
                                     form.pesertaB
                                 }
@@ -796,8 +832,18 @@ export default function CreatePenyisihan() {
                                 }
                                 helperText={
                                     selectedPesertaA?.weight != null
-                                        ? `Peserta 2 harus memiliki berat maksimal ±${MAX_SELIBIH_BERAT} kg dari Peserta 1 (${selectedPesertaA.weight} kg).`
-                                        : "Pilih Peserta 1 terlebih dahulu"
+                                        ? t(
+                                            "participantWeightDifference",
+                                            {
+                                                max:
+                                                    MAX_SELIBIH_BERAT,
+                                                weight:
+                                                    selectedPesertaA.weight,
+                                            }
+                                        )
+                                        : t(
+                                            "selectParticipant1"
+                                        )
                                 }
                             >
 
@@ -807,9 +853,15 @@ export default function CreatePenyisihan() {
                                         disabled
                                         value=""
                                     >
-                                        Tidak ada peserta
-                                        dengan selisih berat
-                                        maksimal 5 kg
+
+                                        {t(
+                                            "noParticipantWeightMatch",
+                                            {
+                                                max:
+                                                    MAX_SELIBIH_BERAT,
+                                            }
+                                        )}
+
                                     </MenuItem>
 
                                 ) : (
@@ -817,25 +869,19 @@ export default function CreatePenyisihan() {
                                     pesertaBList.map(
                                         (p) => {
 
-                                            const selisih =
-                                                selectedPesertaA?.weight != null &&
-                                                p.weight != null
-                                                    ? Math.abs(
-                                                        p.weight -
-                                                        selectedPesertaA.weight
-                                                    )
-                                                    : null;
-
                                             return (
 
                                                 <MenuItem
                                                     key={p.id}
                                                     value={p.id}
                                                 >
+
                                                     {p.name}
+
                                                     {p.weight != null
                                                         ? ` - ${p.weight} kg`
-                                                        : ""}                                                    
+                                                        : ""}
+
                                                 </MenuItem>
 
                                             );
@@ -853,12 +899,15 @@ export default function CreatePenyisihan() {
                                     variant="body2"
                                     color="text.secondary"
                                 >
-                                    Selisih berat badan antara
-                                    Peserta 1 dan Peserta 2
-                                    maksimal{" "}
-                                    <strong>
-                                        {MAX_SELIBIH_BERAT} kg
-                                    </strong>.
+
+                                    {t(
+                                        "maximumWeightDifference",
+                                        {
+                                            max:
+                                                MAX_SELIBIH_BERAT,
+                                        }
+                                    )}
+
                                 </Typography>
 
                             )}
@@ -870,7 +919,7 @@ export default function CreatePenyisihan() {
                                     fontWeight: 600,
                                 }}
                             >
-                                Juri Utama
+                                {t("mainJudges")}
                             </Typography>
 
                             {[1, 2, 3].map(
@@ -884,7 +933,13 @@ export default function CreatePenyisihan() {
                                         <TextField
                                             key={field}
                                             select
-                                            label={`Juri Utama ${num}`}
+                                            label={t(
+                                                "mainJudgeNumber",
+                                                {
+                                                    number:
+                                                        num,
+                                                }
+                                            )}
                                             value={
                                                 form[field]
                                             }
@@ -904,7 +959,9 @@ export default function CreatePenyisihan() {
                                                         key={j.id}
                                                         value={j.id}
                                                     >
+
                                                         {j.name}
+
                                                     </MenuItem>
 
                                                 )
@@ -924,7 +981,9 @@ export default function CreatePenyisihan() {
                                     fontWeight: 600,
                                 }}
                             >
-                                Juri Cadangan
+                                {t(
+                                    "reserveJudges"
+                                )}
                             </Typography>
 
                             {[1, 2, 3].map(
@@ -938,7 +997,13 @@ export default function CreatePenyisihan() {
                                         <TextField
                                             key={field}
                                             select
-                                            label={`Juri Cadangan ${num}`}
+                                            label={t(
+                                                "reserveJudgeNumber",
+                                                {
+                                                    number:
+                                                        num,
+                                                }
+                                            )}
                                             value={
                                                 form[field]
                                             }
@@ -958,7 +1023,9 @@ export default function CreatePenyisihan() {
                                                         key={j.id}
                                                         value={j.id}
                                                     >
+
                                                         {j.name}
+
                                                     </MenuItem>
 
                                                 )
@@ -978,12 +1045,16 @@ export default function CreatePenyisihan() {
                                     fontWeight: 600,
                                 }}
                             >
-                                Durasi Ronde
+                                {t(
+                                    "roundDuration"
+                                )}
                             </Typography>
 
                             <TextField
                                 select
-                                label="Durasi setiap ronde"
+                                label={t(
+                                    "roundDurationLabel"
+                                )}
                                 value={
                                     form.durasiRonde
                                 }
@@ -997,11 +1068,21 @@ export default function CreatePenyisihan() {
                             >
 
                                 <MenuItem value={2}>
-                                    2 menit
+                                    {t(
+                                        "minutes",
+                                        {
+                                            count: 2,
+                                        }
+                                    )}
                                 </MenuItem>
 
                                 <MenuItem value={3}>
-                                    3 menit
+                                    {t(
+                                        "minutes",
+                                        {
+                                            count: 3,
+                                        }
+                                    )}
                                 </MenuItem>
 
                             </TextField>
@@ -1013,12 +1094,9 @@ export default function CreatePenyisihan() {
                                     mt: 1,
                                 }}
                             >
-                                Setiap pertandingan terdiri
-                                dari maksimal 3 ronde.
-                                Durasi setiap ronde adalah
-                                2–3 menit. Selisih berat
-                                badan kedua peserta
-                                maksimal 5 kg.
+                                {t(
+                                    "roundInformation"
+                                )}
                             </Typography>
 
                             <Box
@@ -1040,8 +1118,12 @@ export default function CreatePenyisihan() {
                                 >
 
                                     {loading
-                                        ? "Menyimpan..."
-                                        : "Simpan"}
+                                        ? t(
+                                            "saving"
+                                        )
+                                        : t(
+                                            "save"
+                                        )}
 
                                 </Button>
 
@@ -1054,7 +1136,7 @@ export default function CreatePenyisihan() {
                                         )
                                     }
                                 >
-                                    Kembali
+                                    {t("back")}
                                 </Button>
 
                             </Box>
@@ -1066,7 +1148,9 @@ export default function CreatePenyisihan() {
                 </Card>
 
                 <Dialog
-                    open={dialog.open}
+                    open={
+                        dialog.open
+                    }
                     onClose={() => {
 
                         if (!loading) {
@@ -1075,7 +1159,8 @@ export default function CreatePenyisihan() {
                                 open: false,
                                 status:
                                     "success",
-                                message: "",
+                                message:
+                                    "",
                             });
 
                         }
@@ -1087,7 +1172,7 @@ export default function CreatePenyisihan() {
 
                         {dialog.status ===
                             "success"
-                            ? "Berhasil"
+                            ? t("success")
                             : "Error"}
 
                     </DialogTitle>
@@ -1095,7 +1180,9 @@ export default function CreatePenyisihan() {
                     <DialogContent>
 
                         <Typography>
-                            {dialog.message}
+                            {
+                                dialog.message
+                            }
                         </Typography>
 
                     </DialogContent>
@@ -1108,7 +1195,8 @@ export default function CreatePenyisihan() {
                                     open: false,
                                     status:
                                         "success",
-                                    message: "",
+                                    message:
+                                        "",
                                 })
                             }
                         >

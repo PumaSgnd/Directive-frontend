@@ -12,6 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import type { JuriPertandingan } from "../../types/pertandingan";
+import { capitalizeWords } from "../../utils/format";
 
 interface CompetitionTableProps {
     competitionTable: {
@@ -141,7 +142,7 @@ const CompetitionTable: React.FC<CompetitionTableProps> = ({
                                                     "divider",
                                             }}
                                         >
-                                            {name}
+                                            {capitalizeWords(name)}
                                         </TableCell>
 
                                         <TableCell

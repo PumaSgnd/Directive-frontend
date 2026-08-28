@@ -35,6 +35,8 @@ import PertandinganDetailDialog from "./PertandinganDetailDialog";
 import { useStore } from "../../../hooks/useStore";
 import { usePertandinganStore } from "../../../stores/pertandinganStore";
 import { usePertandingan } from "../../../hooks/usePertandingan";
+import { fetchScoreboard } from "../../../api/turnament/penilaian/penilaian";
+import type { Scoreboard } from "../../../types/penilaian";
 
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
@@ -92,6 +94,9 @@ export default function Penyisihan() {
     const [isFullscreen, setIsFullscreen] =
         useState(false);
 
+    const [liveScores, setLiveScores] =
+        useState<Record<number, Scoreboard>>({});
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -136,6 +141,93 @@ export default function Penyisihan() {
             }`;
     }, [pageTitle, t]);
 
+    useEffect(() => {
+        if (
+            !pertandingan ||
+            pertandingan.length === 0
+        ) {
+            setLiveScores({});
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadLiveScores = async () => {
+            try {
+                const results =
+                    await Promise.all(
+                        pertandingan.map(
+                            async (match) => {
+                                try {
+                                    const scoreboard =
+                                        await fetchScoreboard(
+                                            match.id
+                                        );
+
+                                    return {
+                                        id: match.id,
+                                        scoreboard,
+                                    };
+                                } catch (error) {
+                                    console.error(
+                                        `Gagal mengambil scoreboard pertandingan ${match.id}:`,
+                                        error
+                                    );
+
+                                    return {
+                                        id: match.id,
+                                        scoreboard: null,
+                                    };
+                                }
+                            }
+                        )
+                    );
+
+                if (cancelled) return;
+
+                setLiveScores((prev) => {
+                    const next = {
+                        ...prev,
+                    };
+
+                    results.forEach(
+                        ({
+                            id,
+                            scoreboard,
+                        }) => {
+                            if (scoreboard) {
+                                next[id] =
+                                    scoreboard;
+                            }
+                        }
+                    );
+
+                    return next;
+                });
+            } catch (error) {
+                console.error(
+                    "Gagal mengambil live scoreboard:",
+                    error
+                );
+            }
+        };
+
+        // Ambil langsung saat halaman dibuka
+        loadLiveScores();
+
+        // Update setiap 1 detik
+        const interval =
+            setInterval(
+                loadLiveScores,
+                1000
+            );
+
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [pertandingan]);
+
     const formatText = (
         text?: string | null
     ) => {
@@ -165,85 +257,53 @@ export default function Penyisihan() {
         return `${weight} kg`;
     };
 
-    const getRoundScore = (
-        match: any,
-        round: 1 | 2 | 3
-    ) => {
-        const possibleFields = [
-            `skor_ronde_${round}`,
-            `score_ronde_${round}`,
-            `skorRonde${round}`,
-            `scoreRonde${round}`,
-        ];
-
-        for (
-            const field of possibleFields
-        ) {
-            if (
-                match[field] !==
-                undefined &&
-                match[field] !== null
-            ) {
-                return match[field];
-            }
-        }
-
-        if (
-            match.skor_ronde &&
-            match.skor_ronde[round]
-        ) {
-            return match.skor_ronde[round];
-        }
-
-        return null;
-    };
-
     const getRoundScores = (
-        match: any,
+        matchId: number,
         round: 1 | 2 | 3
     ) => {
-        const score = getRoundScore(match, round);
+        const scoreboard =
+            liveScores[matchId];
 
-        if (
-            score === null ||
-            score === undefined
-        ) {
+        if (!scoreboard) {
             return {
                 peserta1: 0,
                 peserta2: 0,
             };
         }
 
-        if (typeof score === "object") {
-            return {
-                peserta1:
-                    score.peserta1 ??
-                    score.peserta1_score ??
-                    score.score1 ??
-                    0,
+        const peserta1 =
+            scoreboard.peserta1.per_ronde.find(
+                (item) =>
+                    item.ronde === round
+            );
 
-                peserta2:
-                    score.peserta2 ??
-                    score.peserta2_score ??
-                    score.score2 ??
-                    0,
-            };
-        }
+        const peserta2 =
+            scoreboard.peserta2.per_ronde.find(
+                (item) =>
+                    item.ronde === round
+            );
 
         return {
-            peserta1: 0,
-            peserta2: score,
+            peserta1:
+                peserta1?.total ?? 0,
+
+            peserta2:
+                peserta2?.total ?? 0,
         };
     };
 
     const RoundScore = ({
-        match,
+        matchId,
         round,
     }: {
-        match: any;
+        matchId: number;
         round: 1 | 2 | 3;
     }) => {
-        const score = getRoundScores(match, round);
+        const score =
+            getRoundScores(
+                matchId,
+                round
+            );
 
         return (
             <Box
@@ -270,7 +330,7 @@ export default function Penyisihan() {
             </Box>
         );
     };
-    
+
     const getJudges = (
         match: any,
         role:
@@ -865,21 +925,21 @@ export default function Penyisihan() {
 
                                                     <TableCell align="center">
                                                         <RoundScore
-                                                            match={match}
+                                                            matchId={match.id}
                                                             round={1}
                                                         />
                                                     </TableCell>
 
                                                     <TableCell align="center">
                                                         <RoundScore
-                                                            match={match}
+                                                            matchId={match.id}
                                                             round={2}
                                                         />
                                                     </TableCell>
 
                                                     <TableCell align="center">
                                                         <RoundScore
-                                                            match={match}
+                                                            matchId={match.id}
                                                             round={3}
                                                         />
                                                     </TableCell>

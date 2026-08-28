@@ -72,16 +72,11 @@ type FormType = {
 const MAX_SELIBIH_BERAT = 5;
 
 export default function EditPenyisihan() {
-
-  const {
-    id,
-  } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
 
   const navigate = useNavigate();
 
-  const {
-    t,
-  } = useTranslation();
+  const { t } = useTranslation();
 
   const {
     sidebarOpen,
@@ -151,13 +146,10 @@ export default function EditPenyisihan() {
   ] = useState(false);
 
   useEffect(() => {
-
     const handleChange = () => {
-
       setIsFullscreen(
         !!document.fullscreenElement
       );
-
     };
 
     document.addEventListener(
@@ -166,64 +158,47 @@ export default function EditPenyisihan() {
     );
 
     return () => {
-
       document.removeEventListener(
         "fullscreenchange",
         handleChange
       );
-
     };
-
   }, []);
 
   useEffect(() => {
-
     setPageTitle(
-      t("edit") +
-      " " +
-      t("penyisihan")
+      `${t("edit")} ${t("penyisihan")}`
     );
-
   }, [
     setPageTitle,
     t,
   ]);
 
   useEffect(() => {
-
     document.title =
-      `Turnament Pencak Silat${pageTitle
-        ? " | " + pageTitle
-        : ""
+      `Turnament Pencak Silat${
+        pageTitle
+          ? " | " + pageTitle
+          : ""
       }`;
-
   }, [
     pageTitle,
   ]);
 
   useEffect(() => {
-
     const loadData = async () => {
-
       try {
-
         setInitialLoading(true);
 
         await Promise.all([
           loadPeserta(),
           loadJuri(),
         ]);
-
       } catch (err) {
-
         console.error(err);
-
       } finally {
-
         setInitialLoading(false);
-
       }
-
     };
 
     loadData();
@@ -232,7 +207,6 @@ export default function EditPenyisihan() {
   }, []);
 
   useEffect(() => {
-
     if (
       !Number.isInteger(
         pertandinganId
@@ -244,9 +218,7 @@ export default function EditPenyisihan() {
     }
 
     const loadDetail = async () => {
-
       try {
-
         setInitialLoading(true);
 
         const data =
@@ -258,12 +230,11 @@ export default function EditPenyisihan() {
           data.babak !==
           "penyisihan"
         ) {
-
           setDialog({
             open: true,
             status: "error",
             message:
-              "Pertandingan ini bukan pertandingan babak penyisihan.",
+              t("matchIsNotQualification"),
           });
 
           return;
@@ -311,11 +282,11 @@ export default function EditPenyisihan() {
             juriCadangan[2]?.id ?? "",
 
           durasiRonde:
-            data.durasi_ronde_menit ?? "",
+            data.durasi_ronde_menit === 3
+              ? 3
+              : 2,
         });
-
       } catch (err: any) {
-
         console.error(err);
 
         setDialog({
@@ -323,26 +294,21 @@ export default function EditPenyisihan() {
           status: "error",
           message:
             err?.response?.data?.message ??
-            "Gagal mengambil data pertandingan.",
+            t("getMatchError"),
         });
-
       } finally {
-
         setInitialLoading(false);
-
       }
-
     };
 
     loadDetail();
-
   }, [
     pertandinganId,
+    t,
   ]);
 
   const selectedPesertaA =
     useMemo(() => {
-
       if (
         form.pesertaA === ""
       ) {
@@ -356,7 +322,6 @@ export default function EditPenyisihan() {
             form.pesertaA
         ) ?? null
       );
-
     }, [
       pesertaList,
       form.pesertaA,
@@ -364,24 +329,20 @@ export default function EditPenyisihan() {
 
   const pesertaBList =
     useMemo(() => {
-
       if (
         !selectedPesertaA ||
         selectedPesertaA.weight ==
         null
       ) {
-
         return pesertaList.filter(
           (p) =>
             p.id !==
             form.pesertaA
         );
-
       }
 
       return pesertaList.filter(
         (p) => {
-
           if (
             p.id ===
             form.pesertaA
@@ -390,8 +351,7 @@ export default function EditPenyisihan() {
           }
 
           if (
-            p.weight ==
-            null
+            p.weight == null
           ) {
             return false;
           }
@@ -406,10 +366,8 @@ export default function EditPenyisihan() {
             selisih <=
             MAX_SELIBIH_BERAT
           );
-
         }
       );
-
     }, [
       pesertaList,
       selectedPesertaA,
@@ -419,7 +377,6 @@ export default function EditPenyisihan() {
   const handlePesertaAChange = (
     value: string
   ) => {
-
     const pesertaId =
       value === ""
         ? ""
@@ -427,53 +384,43 @@ export default function EditPenyisihan() {
 
     setForm((prev) => ({
       ...prev,
-
       pesertaA:
         pesertaId,
-
       pesertaB:
         "",
     }));
-
   };
 
   const handleNumberChange = (
     field: keyof FormType,
     value: string
   ) => {
-
     setForm((prev) => ({
       ...prev,
-
       [field]:
         value === ""
           ? ""
           : Number(value),
     }));
-
   };
 
   const showError = (
     message: string
   ) => {
-
     setDialog({
       open: true,
       status: "error",
       message,
     });
-
   };
 
   const validate = () => {
-
     if (
       form.pesertaA === "" ||
       form.pesertaB === ""
     ) {
-
       showError(
-        "Peserta pertandingan wajib dipilih."
+        t("participantRequired")
       );
 
       return false;
@@ -483,9 +430,8 @@ export default function EditPenyisihan() {
       form.pesertaA ===
       form.pesertaB
     ) {
-
       showError(
-        "Peserta tidak boleh sama."
+        t("participantSame")
       );
 
       return false;
@@ -509,9 +455,8 @@ export default function EditPenyisihan() {
       !pesertaA ||
       !pesertaB
     ) {
-
       showError(
-        "Data peserta tidak ditemukan."
+        t("participantNotFound")
       );
 
       return false;
@@ -521,9 +466,8 @@ export default function EditPenyisihan() {
       pesertaA.weight == null ||
       pesertaB.weight == null
     ) {
-
       showError(
-        "Berat badan kedua peserta wajib tersedia."
+        t("participantWeightRequired")
       );
 
       return false;
@@ -539,10 +483,14 @@ export default function EditPenyisihan() {
       selisihBerat >
       MAX_SELIBIH_BERAT
     ) {
-
       showError(
-        `Selisih berat badan peserta maksimal ${MAX_SELIBIH_BERAT} kg. ` +
-        `Selisih peserta saat ini ${selisihBerat} kg.`
+        t(
+          "maximumWeightDifference",
+          {
+            max:
+              MAX_SELIBIH_BERAT,
+          }
+        )
       );
 
       return false;
@@ -559,9 +507,8 @@ export default function EditPenyisihan() {
         (id) => id === ""
       )
     ) {
-
       showError(
-        "3 juri utama wajib dipilih."
+        t("threeMainJudgesRequired")
       );
 
       return false;
@@ -578,9 +525,8 @@ export default function EditPenyisihan() {
         (id) => id === ""
       )
     ) {
-
       showError(
-        "3 juri cadangan wajib dipilih."
+        t("threeReserveJudgesRequired")
       );
 
       return false;
@@ -598,9 +544,8 @@ export default function EditPenyisihan() {
       uniqueJuri.size !==
       allJuri.length
     ) {
-
       showError(
-        "Juri utama dan juri cadangan tidak boleh sama."
+        t("judgesCannotBeSame")
       );
 
       return false;
@@ -611,7 +556,7 @@ export default function EditPenyisihan() {
       form.durasiRonde !== 3
     ) {
       showError(
-        "Durasi ronde hanya boleh 2 atau 3 menit."
+        t("roundDuration")
       );
 
       return false;
@@ -622,9 +567,8 @@ export default function EditPenyisihan() {
       pertandingan.status !==
       "belum_mulai"
     ) {
-
       showError(
-        "Pertandingan yang sudah dimulai tidak dapat diedit."
+        t("matchDataCannotBeEdited")
       );
 
       return false;
@@ -635,7 +579,6 @@ export default function EditPenyisihan() {
 
   const handleSubmit =
     async () => {
-
       if (!validate()) {
         return;
       }
@@ -643,7 +586,6 @@ export default function EditPenyisihan() {
       setLoading(true);
 
       try {
-
         const payload:
           UpdatePertandinganRequest =
         {
@@ -697,19 +639,15 @@ export default function EditPenyisihan() {
           open: true,
           status: "success",
           message:
-            "Pertandingan berhasil diperbarui.",
+            t("matchUpdated"),
         });
 
         setTimeout(() => {
-
           navigate(
             "/pertandingan/penyisihan"
           );
-
         }, 1500);
-
       } catch (err: any) {
-
         console.error(err);
 
         setDialog({
@@ -717,36 +655,26 @@ export default function EditPenyisihan() {
           status: "error",
           message:
             err?.response?.data?.message ??
-            "Gagal memperbarui pertandingan.",
+            t("updateMatchError"),
         });
-
       } finally {
-
         setLoading(false);
-
       }
     };
 
   const toggleFullscreen =
     () => {
-
       if (
         !document.fullscreenElement
       ) {
-
         document.documentElement
           .requestFullscreen();
-
       } else {
-
         document.exitFullscreen();
-
       }
-
     };
 
   if (initialLoading) {
-
     return (
       <Box
         sx={{
@@ -768,7 +696,6 @@ export default function EditPenyisihan() {
     pertandinganId <= 0 ||
     !pertandingan
   ) {
-
     return (
       <Box
         sx={{
@@ -780,14 +707,17 @@ export default function EditPenyisihan() {
         }}
       >
         <Alert severity="error">
-          Data pertandingan tidak ditemukan.
+          {t("matchNotFound")}
         </Alert>
       </Box>
     );
   }
 
-  return (
+  const isReadOnly =
+    pertandingan.status !==
+    "belum_mulai";
 
+  return (
     <Box
       sx={{
         display: "flex",
@@ -818,14 +748,12 @@ export default function EditPenyisihan() {
             "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
         }}
       >
-
         <Box
           display="flex"
           justifyContent="space-between"
           alignItems="center"
           mb={3}
         >
-
           <Typography
             variant="h2"
             fontWeight={600}
@@ -839,52 +767,39 @@ export default function EditPenyisihan() {
             alignItems="center"
             gap={1}
           >
-
             <Tooltip
               title={t("fullscreen")}
             >
-
               <IconButton
                 size="medium"
                 onClick={
                   toggleFullscreen
                 }
               >
-
                 {isFullscreen ? (
                   <FullscreenExitIcon />
                 ) : (
                   <FullscreenIcon />
                 )}
-
               </IconButton>
-
             </Tooltip>
 
             <UserMenu />
-
           </Box>
-
         </Box>
 
         <Divider />
 
-        {pertandingan.status !==
-          "belum_mulai" && (
-
-            <Alert
-              severity="warning"
-              sx={{
-                mt: 3,
-              }}
-            >
-              Pertandingan sudah
-              dimulai sehingga data
-              pertandingan tidak dapat
-              diedit.
-            </Alert>
-
-          )}
+        {isReadOnly && (
+          <Alert
+            severity="warning"
+            sx={{
+              mt: 3,
+            }}
+          >
+            {t("matchAlreadyStarted")}
+          </Alert>
+        )}
 
         <Card
           sx={{
@@ -892,9 +807,7 @@ export default function EditPenyisihan() {
             borderRadius: 3,
           }}
         >
-
           <CardContent>
-
             <Box
               display="flex"
               flexDirection="column"
@@ -903,18 +816,25 @@ export default function EditPenyisihan() {
               ml={4}
               mr={4}
             >
-
               <Typography
                 variant="body2"
                 color="error"
-                mb={2}
               >
-                * Wajib diisi
+                {t("requiredNote")}
+              </Typography>
+
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                }}
+              >
+                {t("participant")}
               </Typography>
 
               <TextField
                 select
-                label="Peserta 1"
+                label={t("participant1")}
                 value={
                   form.pesertaA
                 }
@@ -924,34 +844,26 @@ export default function EditPenyisihan() {
                   )
                 }
                 fullWidth
-                disabled={
-                  pertandingan.status !==
-                  "belum_mulai"
-                }
+                disabled={isReadOnly}
               >
-
                 {pesertaList.map(
                   (p) => (
-
                     <MenuItem
                       key={p.id}
                       value={p.id}
                     >
                       {p.name}
-
                       {p.weight != null
                         ? ` - ${p.weight} kg`
                         : ""}
                     </MenuItem>
-
                   )
                 )}
-
               </TextField>
 
               <TextField
                 select
-                label="Peserta 2"
+                label={t("participant2")}
                 value={
                   form.pesertaB
                 }
@@ -964,70 +876,69 @@ export default function EditPenyisihan() {
                 fullWidth
                 disabled={
                   form.pesertaA === "" ||
-                  pertandingan.status !==
-                  "belum_mulai"
+                  isReadOnly
                 }
                 helperText={
                   selectedPesertaA?.weight != null
-                    ? `Peserta 2 harus memiliki berat maksimal ±${MAX_SELIBIH_BERAT} kg dari Peserta 1 (${selectedPesertaA.weight} kg).`
-                    : "Pilih Peserta 1 terlebih dahulu"
+                    ? t(
+                        "participantWeightDifference",
+                        {
+                          max:
+                            MAX_SELIBIH_BERAT,
+                          weight:
+                            selectedPesertaA.weight,
+                        }
+                      )
+                    : t(
+                        "selectParticipant1"
+                      )
                 }
               >
-
                 {pesertaBList.length === 0 ? (
-
                   <MenuItem
                     disabled
                     value=""
                   >
-                    Tidak ada peserta
-                    dengan selisih
-                    berat maksimal
-                    5 kg
+                    {t(
+                      "noParticipantWeightMatch",
+                      {
+                        max:
+                          MAX_SELIBIH_BERAT,
+                      }
+                    )}
                   </MenuItem>
-
                 ) : (
-
                   pesertaBList.map(
                     (p) => (
-
                       <MenuItem
                         key={p.id}
                         value={p.id}
                       >
                         {p.name}
-
                         {p.weight != null
                           ? ` - ${p.weight} kg`
                           : ""}
                       </MenuItem>
-
                     )
                   )
-
                 )}
-
               </TextField>
 
               {selectedPesertaA?.weight !=
                 null && (
-
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                  >
-                    Selisih berat badan
-                    antara Peserta 1
-                    dan Peserta 2
-                    maksimal{" "}
-                    <strong>
-                      {
-                        MAX_SELIBIH_BERAT
-                      } kg
-                    </strong>.
-                  </Typography>
-
-                )}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  {t(
+                    "maximumWeightDifference",
+                    {
+                      max:
+                        MAX_SELIBIH_BERAT,
+                    }
+                  )}
+                </Typography>
+              )}
 
               <Typography
                 variant="h6"
@@ -1036,21 +947,24 @@ export default function EditPenyisihan() {
                   fontWeight: 600,
                 }}
               >
-                Juri Utama
+                {t("mainJudges")}
               </Typography>
 
               {[1, 2, 3].map(
                 (num) => {
-
                   const field =
                     `juriUtama${num}` as keyof FormType;
 
                   return (
-
                     <TextField
                       key={field}
                       select
-                      label={`Juri Utama ${num}`}
+                      label={t(
+                        "mainJudgeNumber",
+                        {
+                          number: num,
+                        }
+                      )}
                       value={
                         form[field]
                       }
@@ -1061,29 +975,20 @@ export default function EditPenyisihan() {
                         )
                       }
                       fullWidth
-                      disabled={
-                        pertandingan.status !==
-                        "belum_mulai"
-                      }
+                      disabled={isReadOnly}
                     >
-
                       {juriList.map(
                         (j) => (
-
                           <MenuItem
                             key={j.id}
                             value={j.id}
                           >
                             {j.name}
                           </MenuItem>
-
                         )
                       )}
-
                     </TextField>
-
                   );
-
                 }
               )}
 
@@ -1094,21 +999,24 @@ export default function EditPenyisihan() {
                   fontWeight: 600,
                 }}
               >
-                Juri Cadangan
+                {t("reserveJudges")}
               </Typography>
 
               {[1, 2, 3].map(
                 (num) => {
-
                   const field =
                     `juriCadangan${num}` as keyof FormType;
 
                   return (
-
                     <TextField
                       key={field}
                       select
-                      label={`Juri Cadangan ${num}`}
+                      label={t(
+                        "reserveJudgeNumber",
+                        {
+                          number: num,
+                        }
+                      )}
                       value={
                         form[field]
                       }
@@ -1119,29 +1027,20 @@ export default function EditPenyisihan() {
                         )
                       }
                       fullWidth
-                      disabled={
-                        pertandingan.status !==
-                        "belum_mulai"
-                      }
+                      disabled={isReadOnly}
                     >
-
                       {juriList.map(
                         (j) => (
-
                           <MenuItem
                             key={j.id}
                             value={j.id}
                           >
                             {j.name}
                           </MenuItem>
-
                         )
                       )}
-
                     </TextField>
-
                   );
-
                 }
               )}
 
@@ -1152,12 +1051,14 @@ export default function EditPenyisihan() {
                   fontWeight: 600,
                 }}
               >
-                Durasi Ronde
+                {t("roundDuration")}
               </Typography>
 
               <TextField
                 select
-                label="Durasi setiap ronde"
+                label={t(
+                  "roundDurationLabel"
+                )}
                 value={
                   form.durasiRonde
                 }
@@ -1168,20 +1069,19 @@ export default function EditPenyisihan() {
                   )
                 }
                 fullWidth
-                disabled={
-                  pertandingan.status !==
-                  "belum_mulai"
-                }
+                disabled={isReadOnly}
               >
-
                 <MenuItem value={2}>
-                  2 menit
+                  {t("minutes", {
+                    count: 2,
+                  })}
                 </MenuItem>
 
                 <MenuItem value={3}>
-                  3 menit
+                  {t("minutes", {
+                    count: 3,
+                  })}
                 </MenuItem>
-
               </TextField>
 
               <Typography
@@ -1191,13 +1091,7 @@ export default function EditPenyisihan() {
                   mt: 1,
                 }}
               >
-                Setiap pertandingan
-                terdiri dari maksimal
-                3 ronde. Durasi setiap
-                ronde adalah 2–3 menit.
-                Selisih berat badan
-                kedua peserta maksimal
-                5 kg.
+                {t("roundInformation")}
               </Typography>
 
               <Box
@@ -1206,7 +1100,6 @@ export default function EditPenyisihan() {
                 gap={2}
                 mt={2}
               >
-
                 <Button
                   variant="contained"
                   color="error"
@@ -1215,15 +1108,12 @@ export default function EditPenyisihan() {
                   }
                   disabled={
                     loading ||
-                    pertandingan.status !==
-                    "belum_mulai"
+                    isReadOnly
                   }
                 >
-
                   {loading
-                    ? "Menyimpan..."
-                    : "Simpan Perubahan"}
-
+                    ? t("saving")
+                    : t("saveChanges")}
                 </Button>
 
                 <Button
@@ -1235,15 +1125,11 @@ export default function EditPenyisihan() {
                     )
                   }
                 >
-                  Kembali
+                  {t("back")}
                 </Button>
-
               </Box>
-
             </Box>
-
           </CardContent>
-
         </Card>
 
         <Dialog
@@ -1251,9 +1137,7 @@ export default function EditPenyisihan() {
             dialog.open
           }
           onClose={() => {
-
             if (!loading) {
-
               setDialog({
                 open: false,
                 status:
@@ -1261,33 +1145,23 @@ export default function EditPenyisihan() {
                 message:
                   "",
               });
-
             }
-
           }}
         >
-
           <DialogTitle>
-
             {dialog.status ===
-              "success"
-              ? "Berhasil"
+            "success"
+              ? t("success")
               : "Error"}
-
           </DialogTitle>
 
           <DialogContent>
-
             <Typography>
-              {
-                dialog.message
-              }
+              {dialog.message}
             </Typography>
-
           </DialogContent>
 
           <DialogActions>
-
             <Button
               onClick={() =>
                 setDialog({
@@ -1301,13 +1175,9 @@ export default function EditPenyisihan() {
             >
               OK
             </Button>
-
           </DialogActions>
-
         </Dialog>
-
       </Box>
-
     </Box>
   );
 }

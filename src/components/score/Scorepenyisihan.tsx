@@ -50,6 +50,21 @@ const POLL_INTERVAL_MS = 1000;
 type MatchScore = {
     peserta1: number;
     peserta2: number;
+
+    ronde1: {
+        peserta1: number;
+        peserta2: number;
+    };
+
+    ronde2: {
+        peserta1: number;
+        peserta2: number;
+    };
+
+    ronde3: {
+        peserta1: number;
+        peserta2: number;
+    };
 };
 
 export default function Score() {
@@ -116,86 +131,166 @@ export default function Score() {
     ]);
 
     useEffect(() => {
-        const loadScores =
-            async () => {
-                if (
-                    !pertandingan ||
-                    pertandingan.length === 0
-                ) {
-                    setScores({});
-                    return;
-                }
+        const loadScores = async () => {
+            if (
+                !pertandingan ||
+                pertandingan.length === 0
+            ) {
+                setScores({});
+                return;
+            }
 
-                const results =
-                    await Promise.all(
-                        pertandingan.map(
-                            async (match) => {
-                                try {
-                                    const scoreboard =
-                                        await fetchScoreboard(
-                                            match.id
-                                        );
+            const results = await Promise.all(
+                pertandingan.map(
+                    async (match) => {
+                        try {
+                            const scoreboard =
+                                await fetchScoreboard(
+                                    match.id
+                                );
 
-                                    return {
-                                        id: match.id,
-                                        peserta1:
-                                            Number(
-                                                scoreboard
-                                                    ?.peserta1
-                                                    ?.total ??
-                                                0
-                                            ),
-                                        peserta2:
-                                            Number(
-                                                scoreboard
-                                                    ?.peserta2
-                                                    ?.total ??
-                                                0
-                                            ),
-                                    };
-                                } catch {
-                                    return {
-                                        id: match.id,
-                                        peserta1: 0,
-                                        peserta2: 0,
-                                    };
-                                }
-                            }
-                        )
-                    );
+                            const getRoundScore = (
+                                peserta: {
+                                    per_ronde: {
+                                        ronde: 1 | 2 | 3;
+                                        total: number;
+                                    }[];
+                                },
+                                ronde: 1 | 2 | 3
+                            ) => {
+                                return Number(
+                                    peserta.per_ronde.find(
+                                        (item) =>
+                                            item.ronde === ronde
+                                    )?.total ?? 0
+                                );
+                            };
 
-                const scoreMap:
-                    Record<
-                        number,
-                        MatchScore
-                    > = {};
+                            return {
+                                id: match.id,
 
-                results.forEach(
-                    (item) => {
-                        scoreMap[
-                            item.id
-                        ] = {
-                            peserta1:
-                                item.peserta1,
-                            peserta2:
-                                item.peserta2,
-                        };
+                                peserta1:
+                                    Number(
+                                        scoreboard
+                                            ?.peserta1
+                                            ?.total ?? 0
+                                    ),
+
+                                peserta2:
+                                    Number(
+                                        scoreboard
+                                            ?.peserta2
+                                            ?.total ?? 0
+                                    ),
+
+                                ronde1: {
+                                    peserta1:
+                                        scoreboard
+                                            ? getRoundScore(
+                                                scoreboard.peserta1,
+                                                1
+                                            )
+                                            : 0,
+
+                                    peserta2:
+                                        scoreboard
+                                            ? getRoundScore(
+                                                scoreboard.peserta2,
+                                                1
+                                            )
+                                            : 0,
+                                },
+
+                                ronde2: {
+                                    peserta1:
+                                        scoreboard
+                                            ? getRoundScore(
+                                                scoreboard.peserta1,
+                                                2
+                                            )
+                                            : 0,
+
+                                    peserta2:
+                                        scoreboard
+                                            ? getRoundScore(
+                                                scoreboard.peserta2,
+                                                2
+                                            )
+                                            : 0,
+                                },
+
+                                ronde3: {
+                                    peserta1:
+                                        scoreboard
+                                            ? getRoundScore(
+                                                scoreboard.peserta1,
+                                                3
+                                            )
+                                            : 0,
+
+                                    peserta2:
+                                        scoreboard
+                                            ? getRoundScore(
+                                                scoreboard.peserta2,
+                                                3
+                                            )
+                                            : 0,
+                                },
+                            };
+                        } catch {
+                            return {
+                                id: match.id,
+
+                                peserta1: 0,
+                                peserta2: 0,
+
+                                ronde1: {
+                                    peserta1: 0,
+                                    peserta2: 0,
+                                },
+
+                                ronde2: {
+                                    peserta1: 0,
+                                    peserta2: 0,
+                                },
+
+                                ronde3: {
+                                    peserta1: 0,
+                                    peserta2: 0,
+                                },
+                            };
+                        }
                     }
-                );
+                )
+            );
 
-                setScores(scoreMap);
-            };
+            const scoreMap: Record<
+                number,
+                MatchScore
+            > = {};
+
+            results.forEach((item) => {
+                scoreMap[item.id] = {
+                    peserta1: item.peserta1,
+                    peserta2: item.peserta2,
+
+                    ronde1: item.ronde1,
+                    ronde2: item.ronde2,
+                    ronde3: item.ronde3,
+                };
+            });
+
+            setScores(scoreMap);
+        };
 
         loadScores();
 
-        const interval =
-            setInterval(
-                loadScores,
-                POLL_INTERVAL_MS
-            );
+        const interval = setInterval(
+            loadScores,
+            POLL_INTERVAL_MS
+        );
 
-        return () =>
-            clearInterval(interval);
+        return () => clearInterval(interval);
     }, [pertandingan]);
 
     const toggleFullscreen =
@@ -386,6 +481,40 @@ export default function Score() {
         search,
         statusFilter,
     ]);
+
+    const RoundScore = ({
+        score,
+    }: {
+        score: {
+            peserta1: number;
+            peserta2: number;
+        };
+    }) => {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    width: "100%",
+                }}
+            >
+                <Chip
+                    label={`${score.peserta1} - ${score.peserta2}`}
+                    size="small"
+                    sx={{
+                        minWidth: 65,
+                        height: 28,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        "& .MuiChip-label": {
+                            px: 1.5,
+                        },
+                    }}
+                />
+            </Box>
+        );
+    };
 
     if (loading) {
         return (
@@ -603,9 +732,15 @@ export default function Score() {
                                         </TableCell>
 
                                         <TableCell align="center">
-                                            {t(
-                                                "skor"
-                                            )}
+                                            {t("round1")}
+                                        </TableCell>
+
+                                        <TableCell align="center">
+                                            {t("round2")}
+                                        </TableCell>
+
+                                        <TableCell align="center">
+                                            {t("round3")}
                                         </TableCell>
 
                                         <TableCell align="center">
@@ -729,22 +864,36 @@ export default function Score() {
                                                         </TableCell>
 
                                                         <TableCell align="center">
-                                                            <Typography
-                                                                fontWeight={
-                                                                    700
+                                                            <RoundScore
+                                                                score={
+                                                                    scores[match.id]?.ronde1 ?? {
+                                                                        peserta1: 0,
+                                                                        peserta2: 0,
+                                                                    }
                                                                 }
-                                                                fontSize={
-                                                                    16
+                                                            />
+                                                        </TableCell>
+
+                                                        <TableCell align="center">
+                                                            <RoundScore
+                                                                score={
+                                                                    scores[match.id]?.ronde2 ?? {
+                                                                        peserta1: 0,
+                                                                        peserta2: 0,
+                                                                    }
                                                                 }
-                                                            >
-                                                                {
-                                                                    score1
-                                                                }{" "}
-                                                                -{" "}
-                                                                {
-                                                                    score2
+                                                            />
+                                                        </TableCell>
+
+                                                        <TableCell align="center">
+                                                            <RoundScore
+                                                                score={
+                                                                    scores[match.id]?.ronde3 ?? {
+                                                                        peserta1: 0,
+                                                                        peserta2: 0,
+                                                                    }
                                                                 }
-                                                            </Typography>
+                                                            />
                                                         </TableCell>
 
                                                         <TableCell align="center">

@@ -43,11 +43,15 @@ import {
     ScorePerJuri,
 } from "../../types/penilaian";
 import LanguageMenu from "../header/LanguageMenu";
+import { usePertandingan } from "../../hooks/usePertandingan";
 
 const POLL_INTERVAL_MS = 1000;
 
 export default function ScoreDetail() {
     const { id } = useParams<{ id: string }>();
+    const {
+        activePertandingan,
+    } = usePertandingan();
 
     const [searchParams] =
         useSearchParams();
@@ -136,6 +140,18 @@ export default function ScoreDetail() {
         },
         [pertandinganId]
     );
+
+    const getBabakLabel = (babak: string) => {
+        const labels: Record<string, string> = {
+            penyisihan: t("penyisihan"),
+            enam_belas_besar: t("enambelasBesar"),
+            perempat_final: t("perempat"),
+            semi_final: t("semiFinal"),
+            final: t("final"),
+        };
+
+        return labels[babak] ?? babak;
+    };
 
     useEffect(() => {
         if (!pertandinganId) {
@@ -334,8 +350,11 @@ export default function ScoreDetail() {
         scoreboard?.peserta2.total ??
         0;
 
-    const daftarJuri =
-        pertandingan.juri ?? [];
+    const daftarJuri = (pertandingan.juri ?? []).filter(
+        (juri) =>
+            juri.peran === "utama" &&
+            Boolean(juri.aktif)
+    );
 
     return (
         <Box
@@ -351,6 +370,7 @@ export default function ScoreDetail() {
                 position: "relative",
             }}
         >
+            {/* HEADER */}
             <Box
                 sx={{
                     position: "absolute",
@@ -358,19 +378,14 @@ export default function ScoreDetail() {
                     left: 0,
                     right: 0,
                     zIndex: 10,
-
                     display: "grid",
-                    gridTemplateColumns:
-                        "1fr auto 1fr",
-
+                    gridTemplateColumns: "1fr auto 1fr",
                     alignItems: "center",
-
                     px: {
                         xs: 2,
                         sm: 3,
                         md: 5,
                     },
-
                     py: 2,
                 }}
             >
@@ -389,20 +404,14 @@ export default function ScoreDetail() {
                                 sm: 24,
                                 md: 32,
                             },
-
                             fontWeight: 700,
-
                             letterSpacing: {
                                 xs: 1,
                                 sm: 2,
                                 md: 3,
                             },
-
-                            textTransform:
-                                "uppercase",
-
-                            whiteSpace:
-                                "nowrap",
+                            textTransform: "uppercase",
+                            whiteSpace: "nowrap",
                         }}
                     >
                         {t("tournamentTitle")}
@@ -412,13 +421,11 @@ export default function ScoreDetail() {
                         sx={{
                             mt: 0.5,
                             color: "#94a3b8",
-
                             fontSize: {
                                 xs: 12,
                                 sm: 14,
                                 md: 18,
                             },
-
                             letterSpacing: 1,
                         }}
                     >
@@ -432,42 +439,29 @@ export default function ScoreDetail() {
                     alignItems="center"
                     gap={0.5}
                 >
-                    {/* LANGUAGE */}
                     <LanguageMenu />
 
-                    {/* FULLSCREEN */}
                     <Tooltip
                         title={
                             isFullscreen
-                                ? t(
-                                    "exitFullscreen"
-                                )
-                                : t(
-                                    "fullscreen"
-                                )
+                                ? t("exitFullscreen")
+                                : t("fullscreen")
                         }
                     >
                         <IconButton
-                            onClick={
-                                toggleFullscreen
-                            }
+                            onClick={toggleFullscreen}
                             sx={{
                                 color: "#fff",
-
                                 width: {
                                     xs: 42,
                                     md: 48,
                                 },
-
                                 height: {
                                     xs: 42,
                                     md: 48,
                                 },
-
                                 borderRadius: 2,
-
-                                "&:hover":
-                                {
+                                "&:hover": {
                                     background:
                                         "rgba(255,255,255,0.1)",
                                 },
@@ -476,8 +470,7 @@ export default function ScoreDetail() {
                             {isFullscreen ? (
                                 <FullscreenExit
                                     sx={{
-                                        fontSize:
-                                        {
+                                        fontSize: {
                                             xs: 22,
                                             md: 26,
                                         },
@@ -486,8 +479,7 @@ export default function ScoreDetail() {
                             ) : (
                                 <Fullscreen
                                     sx={{
-                                        fontSize:
-                                        {
+                                        fontSize: {
                                             xs: 22,
                                             md: 26,
                                         },
@@ -499,32 +491,136 @@ export default function ScoreDetail() {
                 </Box>
             </Box>
 
+            {/* CONTENT */}
             <Box
                 sx={{
                     minHeight: "100vh",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
-
                     px: {
-                        xs: 2,
-                        sm: 4,
-                        md: 8,
+                        xs: 20,
+                        sm: 26,
+                        md: 46,
                     },
-
                     py: {
                         xs: 10,
                         sm: 12,
-                        md: 14,
+                        md: 13,
                     },
-
                     transform: {
-                        xs: "translateY(-35px)",
-                        sm: "translateY(-45px)",
-                        md: "translateY(-60px)",
+                        xs: "translateY(-75px)",
+                        sm: "translateY(-85px)",
+                        md: "translateY(-90px)",
                     },
                 }}
             >
+                {/* NAMA PESERTA + VS */}
+                <Box
+                    textAlign="center"
+                    mb={{
+                        xs: 4,
+                        md: 6,
+                    }}
+                    sx={{
+                        background:
+                            "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 4,
+                        px: {
+                            xs: 6,
+                            sm: 8,
+                            md: 10,
+                        },
+                        py: {
+                            xs: 2,
+                            sm: 3,
+                            md: 4,
+                        },
+                        backdropFilter: "blur(10px)",
+                        boxShadow:
+                            "0 8px 32px rgba(0,0,0,0.25)",
+                    }}
+                >
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        gap={{
+                            xs: 1.5,
+                            sm: 3,
+                            md: 5,
+                        }}
+                        flexWrap="wrap"
+                    >
+                        <Typography
+                            sx={{
+                                fontSize: {
+                                    xs: 18,
+                                    sm: 26,
+                                    md: 36,
+                                },
+                                fontWeight: 800,
+                                textTransform: "uppercase",
+                                textAlign: "center",
+                            }}
+                        >
+                            {peserta1Name}
+                        </Typography>
+
+                        <Typography
+                            sx={{
+                                fontSize: {
+                                    xs: 18,
+                                    sm: 24,
+                                    md: 32,
+                                },
+                                fontWeight: 900,
+                                color: "#f87171",
+                            }}
+                        >
+                            VS
+                        </Typography>
+
+                        <Typography
+                            sx={{
+                                fontSize: {
+                                    xs: 18,
+                                    sm: 26,
+                                    md: 36,
+                                },
+                                fontWeight: 800,
+                                textTransform: "uppercase",
+                                textAlign: "center",
+                            }}
+                        >
+                            {peserta2Name}
+                        </Typography>
+                    </Box>
+
+                    <Typography
+                        sx={{
+                            mt: 1.5,
+                            color: "#94a3b8",
+                            fontSize: {
+                                xs: 12,
+                                sm: 14,
+                                md: 18,
+                            },
+                            fontWeight: 500,
+                        }}
+                    >
+                        {t("round")}:{" "}
+                        {getBabakLabel(pertandingan.babak)}
+                        {" • "}
+                        {t("roundLabel")}{" "}
+                        {pertandingan.ronde_aktif ?? 1}
+                        {" / "}
+                        {pertandingan.total_ronde ?? 3}
+                    </Typography>
+                </Box>
+
+                {/* SCORE */}
                 <Box
                     display="flex"
                     gap={{
@@ -539,17 +635,11 @@ export default function ScoreDetail() {
                         sx={{
                             flex: 1,
                             maxWidth: 550,
-
                             background:
                                 "linear-gradient(145deg, #991b1b, #450a0a)",
-
                             color: "#fff",
-
                             borderRadius: 4,
-
-                            overflow:
-                                "hidden",
-
+                            overflow: "hidden",
                             border:
                                 "2px solid rgba(255,255,255,0.15)",
                         }}
@@ -560,14 +650,11 @@ export default function ScoreDetail() {
                                     xs: 2,
                                     md: 4,
                                 },
-
                                 py: {
                                     xs: 2,
                                     md: 3,
                                 },
-
-                                textAlign:
-                                    "center",
+                                textAlign: "center",
                             }}
                         >
                             <Typography
@@ -576,14 +663,9 @@ export default function ScoreDetail() {
                                         xs: 16,
                                         md: 26,
                                     },
-
                                     fontWeight: 700,
-
-                                    textTransform:
-                                        "uppercase",
-
-                                    wordBreak:
-                                        "break-word",
+                                    textTransform: "uppercase",
+                                    wordBreak: "break-word",
                                 }}
                             >
                                 {peserta1Name}
@@ -596,11 +678,8 @@ export default function ScoreDetail() {
                                         sm: 100,
                                         md: 150,
                                     },
-
                                     lineHeight: 1,
-
                                     fontWeight: 900,
-
                                     mt: 2,
                                 }}
                             >
@@ -621,9 +700,7 @@ export default function ScoreDetail() {
                                     xs: 18,
                                     md: 32,
                                 },
-
                                 fontWeight: 900,
-
                                 color: "#f8fafc",
                             }}
                         >
@@ -636,17 +713,11 @@ export default function ScoreDetail() {
                         sx={{
                             flex: 1,
                             maxWidth: 550,
-
                             background:
                                 "linear-gradient(145deg, #1d4ed8, #172554)",
-
                             color: "#fff",
-
                             borderRadius: 4,
-
-                            overflow:
-                                "hidden",
-
+                            overflow: "hidden",
                             border:
                                 "2px solid rgba(255,255,255,0.15)",
                         }}
@@ -657,14 +728,11 @@ export default function ScoreDetail() {
                                     xs: 2,
                                     md: 4,
                                 },
-
                                 py: {
                                     xs: 2,
                                     md: 3,
                                 },
-
-                                textAlign:
-                                    "center",
+                                textAlign: "center",
                             }}
                         >
                             <Typography
@@ -673,14 +741,9 @@ export default function ScoreDetail() {
                                         xs: 16,
                                         md: 26,
                                     },
-
                                     fontWeight: 700,
-
-                                    textTransform:
-                                        "uppercase",
-
-                                    wordBreak:
-                                        "break-word",
+                                    textTransform: "uppercase",
+                                    wordBreak: "break-word",
                                 }}
                             >
                                 {peserta2Name}
@@ -693,11 +756,8 @@ export default function ScoreDetail() {
                                         sm: 100,
                                         md: 150,
                                     },
-
                                     lineHeight: 1,
-
                                     fontWeight: 900,
-
                                     mt: 2,
                                 }}
                             >
@@ -707,6 +767,7 @@ export default function ScoreDetail() {
                     </Card>
                 </Box>
 
+                {/* STATUS */}
                 <Box
                     textAlign="center"
                     mt={4}
@@ -721,14 +782,10 @@ export default function ScoreDetail() {
                             sx={{
                                 width: 10,
                                 height: 10,
-
-                                borderRadius:
-                                    "50%",
-
-                                background:
-                                    getStatusColor(),
-
-                                boxShadow: `0 0 12px ${getStatusColor()}`,
+                                borderRadius: "50%",
+                                background: getStatusColor(),
+                                boxShadow:
+                                    `0 0 12px ${getStatusColor()}`,
                             }}
                         />
 
@@ -738,13 +795,9 @@ export default function ScoreDetail() {
                                     xs: 12,
                                     md: 18,
                                 },
-
                                 fontWeight: 700,
-
                                 letterSpacing: 1,
-
-                                color:
-                                    getStatusColor(),
+                                color: getStatusColor(),
                             }}
                         >
                             {getStatusText()}
@@ -752,217 +805,157 @@ export default function ScoreDetail() {
                     </Box>
                 </Box>
 
-                {daftarJuri.length >
-                    0 && (
-                        <Box
+                {/* SKOR PER JURI */}
+                {daftarJuri.length > 0 && (
+                    <Box
+                        sx={{
+                            width: "100%",
+                            maxWidth: 1100,
+                            mx: "auto",
+                        }}
+                    >
+                        <Divider
                             sx={{
-                                width: "100%",
-                                maxWidth: 1100,
-                                mx: "auto",
+                                borderColor:
+                                    "rgba(255,255,255,0.15)",
+                                mb: 3,
                             }}
-                        >
-                            <Divider
-                                sx={{
-                                    borderColor:
-                                        "rgba(255,255,255,0.15)",
+                        />
 
-                                    mb: 3,
-                                }}
-                            />
-
-                            <Typography
-                                textAlign="center"
-                                sx={{
-                                    fontSize: {
-                                        xs: 14,
-                                        md: 20,
-                                    },
-
-                                    fontWeight: 700,
-
-                                    mb: 2,
-
-                                    color: "#cbd5e1",
-
-                                    textTransform:
-                                        "uppercase",
-
-                                    letterSpacing: 2,
-                                }}
-                            >
-                                {t(
-                                    "scorePerJudge"
-                                )}
-                            </Typography>
-
-                            <Box
-                                display="grid"
-                                gridTemplateColumns={{
-                                    xs: "1fr",
-
-                                    sm: `repeat(${Math.min(
-                                        daftarJuri.length,
-                                        3
-                                    )}, 1fr)`,
-                                }}
-                                gap={2}
-                            >
-                                {daftarJuri.map(
-                                    (
-                                        juri,
-                                        index
-                                    ) => {
-                                        const score1 =
-                                            getJuriScore(
-                                                juri.id,
-                                                pertandingan.peserta1_id
-                                            );
-
-                                        const score2 =
-                                            getJuriScore(
-                                                juri.id,
-                                                pertandingan.peserta2_id
-                                            );
-
-                                        return (
-                                            <Card
-                                                key={
-                                                    juri.id
-                                                }
-                                                sx={{
-                                                    background:
-                                                        "rgba(255,255,255,0.06)",
-
-                                                    color: "#fff",
-
-                                                    border:
-                                                        "1px solid rgba(255,255,255,0.1)",
-
-                                                    borderRadius: 3,
-
-                                                    backdropFilter:
-                                                        "blur(10px)",
-                                                }}
-                                            >
-                                                <Box
-                                                    sx={{
-                                                        p: 2,
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        textAlign="center"
-                                                        fontWeight={
-                                                            700
-                                                        }
-                                                        sx={{
-                                                            fontSize:
-                                                            {
-                                                                xs: 13,
-                                                                md: 16,
-                                                            },
-
-                                                            mb: 1.5,
-                                                        }}
-                                                    >
-                                                        {juri.full_name ||
-                                                            `Juri ${index +
-                                                            1
-                                                            }`}
-                                                    </Typography>
-
-                                                    <Box
-                                                        display="flex"
-                                                        justifyContent="center"
-                                                        alignItems="center"
-                                                        gap={3}
-                                                    >
-                                                        {/* PESERTA 1 */}
-                                                        <Box textAlign="center">
-                                                            <Typography
-                                                                sx={{
-                                                                    color:
-                                                                        "#fca5a5",
-
-                                                                    fontSize:
-                                                                        11,
-                                                                }}
-                                                            >
-                                                                {
-                                                                    peserta1Name
-                                                                }
-                                                            </Typography>
-
-                                                            <Typography
-                                                                fontSize={
-                                                                    28
-                                                                }
-                                                                fontWeight={
-                                                                    900
-                                                                }
-                                                            >
-                                                                {
-                                                                    score1
-                                                                }
-                                                            </Typography>
-                                                        </Box>
-
-                                                        <Typography
-                                                            color="text.secondary"
-                                                        >
-                                                            -
-                                                        </Typography>
-
-                                                        {/* PESERTA 2 */}
-                                                        <Box textAlign="center">
-                                                            <Typography
-                                                                sx={{
-                                                                    color:
-                                                                        "#93c5fd",
-
-                                                                    fontSize:
-                                                                        11,
-                                                                }}
-                                                            >
-                                                                {
-                                                                    peserta2Name
-                                                                }
-                                                            </Typography>
-
-                                                            <Typography
-                                                                fontSize={
-                                                                    28
-                                                                }
-                                                                fontWeight={
-                                                                    900
-                                                                }
-                                                            >
-                                                                {
-                                                                    score2
-                                                                }
-                                                            </Typography>
-                                                        </Box>
-                                                    </Box>
-                                                </Box>
-                                            </Card>
-                                        );
-                                    }
-                                )}
-                            </Box>
-                        </Box>
-                    )}
-
-                {daftarJuri.length ===
-                    0 && (
                         <Typography
                             textAlign="center"
-                            color="#64748b"
-                            mt={3}
+                            sx={{
+                                fontSize: {
+                                    xs: 14,
+                                    md: 20,
+                                },
+                                fontWeight: 700,
+                                mb: 2,
+                                color: "#cbd5e1",
+                                textTransform: "uppercase",
+                                letterSpacing: 2,
+                            }}
                         >
-                            {t(
-                                "noJudgeAssigned"
-                            )}
+                            {t("scorePerJudge")}
                         </Typography>
-                    )}
+
+                        <Box
+                            display="grid"
+                            gridTemplateColumns={{
+                                xs: "1fr",
+                                sm: `repeat(${Math.min(
+                                    daftarJuri.length,
+                                    3
+                                )}, 1fr)`,
+                            }}
+                            gap={2}
+                        >
+                            {daftarJuri.map((juri, index) => {
+                                const score1 =
+                                    getJuriScore(
+                                        juri.id,
+                                        pertandingan.peserta1_id
+                                    );
+
+                                const score2 =
+                                    getJuriScore(
+                                        juri.id,
+                                        pertandingan.peserta2_id
+                                    );
+
+                                return (
+                                    <Card
+                                        key={juri.id}
+                                        sx={{
+                                            background:
+                                                "rgba(255,255,255,0.06)",
+                                            color: "#fff",
+                                            border:
+                                                "1px solid rgba(255,255,255,0.1)",
+                                            borderRadius: 3,
+                                            backdropFilter:
+                                                "blur(10px)",
+                                        }}
+                                    >
+                                        <Box sx={{ p: 2 }}>
+                                            <Typography
+                                                textAlign="center"
+                                                fontWeight={700}
+                                                sx={{
+                                                    fontSize: {
+                                                        xs: 13,
+                                                        md: 16,
+                                                    },
+                                                    mb: 1.5,
+                                                }}
+                                            >
+                                                {juri.full_name ||
+                                                    `Juri ${index + 1}`}
+                                            </Typography>
+
+                                            <Box
+                                                display="flex"
+                                                justifyContent="center"
+                                                alignItems="center"
+                                                gap={3}
+                                            >
+                                                <Box textAlign="center">
+                                                    <Typography
+                                                        sx={{
+                                                            color: "#fca5a5",
+                                                            fontSize: 11,
+                                                        }}
+                                                    >
+                                                        {peserta1Name}
+                                                    </Typography>
+
+                                                    <Typography
+                                                        fontSize={28}
+                                                        fontWeight={900}
+                                                    >
+                                                        {score1}
+                                                    </Typography>
+                                                </Box>
+
+                                                <Typography color="text.secondary">
+                                                    -
+                                                </Typography>
+
+                                                <Box textAlign="center">
+                                                    <Typography
+                                                        sx={{
+                                                            color: "#93c5fd",
+                                                            fontSize: 11,
+                                                        }}
+                                                    >
+                                                        {peserta2Name}
+                                                    </Typography>
+
+                                                    <Typography
+                                                        fontSize={28}
+                                                        fontWeight={900}
+                                                    >
+                                                        {score2}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    </Card>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
+
+                {daftarJuri.length === 0 && (
+                    <Typography
+                        textAlign="center"
+                        color="#64748b"
+                        mt={3}
+                    >
+                        {t("noJudgeAssigned")}
+                    </Typography>
+                )}
             </Box>
         </Box>
     );
