@@ -159,7 +159,7 @@ export default function RegisterPage() {
                 <img
                     src={directiveLogo}
                     alt="Directive Logo"
-                    style={{ height: 60, cursor: "pointer" }}
+                    style={{ height: 150, cursor: "pointer" }}
                     onClick={() => window.location.reload()}
                 />
             </Box>

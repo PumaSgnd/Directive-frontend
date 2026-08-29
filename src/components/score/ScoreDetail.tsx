@@ -44,6 +44,7 @@ import {
 } from "../../types/penilaian";
 import LanguageMenu from "../header/LanguageMenu";
 import { usePertandingan } from "../../hooks/usePertandingan";
+import { useStore } from "../../hooks/useStore";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -52,6 +53,10 @@ export default function ScoreDetail() {
     const {
         activePertandingan,
     } = usePertandingan();
+
+    const {
+        pageTitle,
+    } = useStore();
 
     const [searchParams] =
         useSearchParams();
@@ -152,6 +157,17 @@ export default function ScoreDetail() {
 
         return labels[babak] ?? babak;
     };
+
+    useEffect(() => {
+        document.title =
+            `${t("turnamentTitle")}${pageTitle
+                ? " | " + pageTitle
+                : ""
+            }`;
+    }, [
+        pageTitle,
+        t,
+    ]);
 
     useEffect(() => {
         if (!pertandinganId) {

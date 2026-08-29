@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
                 <img
                     src={directiveLogo}
                     alt="Directive Logo"
-                    style={{ height: 60, cursor: "pointer" }}
+                    style={{ height: 200, cursor: "pointer" }}
                     onClick={() => window.location.reload()}
                 />
             </Box>

@@ -54,7 +54,7 @@ i18n
           juriUpdated: "Juri berhasil diperbarui!",
           save: "Save",
           loading: "Loading...",
-          turnamentTitle: "PENCAK SILAT TOURNAMENT",
+          turnamentTitle: "Digital Scoring",
           toggleFullscreen: "Toggle fullscreen view",
           edit: "Edit",
 
@@ -126,7 +126,7 @@ i18n
           account: "Account",
 
           // SCORE
-          tournamentTitle: "PENCAK SILAT TOURNAMENT",
+          tournamentTitle: "Pencak Silat Turnament",
           scoreboardTitle: "SCORE BOARD",
           noMatchesFound: "No Matches Yet",
           exitFullscreen: "Exit Fullscreen",
@@ -268,7 +268,7 @@ i18n
           juriUpdated: "Juri berhasil diperbarui!",
           save: "Simpan",
           loading: "Memuat...",
-          turnamentTitle: "Turnament Pencak Silat",
+          turnamentTitle: "Digital Scoring",
           toggleFullscreen: "Aktifkan tampilan layar penuh",
           edit: "Edit",
 
@@ -341,7 +341,7 @@ i18n
           account: "Akun",
 
           // SCORE
-          tournamentTitle: "Turnament Pencak Silat",
+          tournamentTitle: "Turnamen Pencak Silat",
           scoreboardTitle: "SCORE BOARD",
           noMatchesFound: "Belum ada pertandingan",
           exitFullscreen: "Keluar Layar Penuh",

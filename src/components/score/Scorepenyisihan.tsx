@@ -121,7 +121,7 @@ export default function Score() {
 
     useEffect(() => {
         document.title =
-            `${t("tournamentTitle")}${pageTitle
+            `${t("turnamentTitle")}${pageTitle
                 ? " | " + pageTitle
                 : ""
             }`;

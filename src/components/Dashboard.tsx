@@ -105,7 +105,7 @@ const Dashboard: React.FC = () => {
      * DOCUMENT TITLE
      */
     useEffect(() => {
-        document.title = `${t("tournamentTitle")}${
+        document.title = `${t("turnamentTitle")}${
             pageTitle ? ` | ${pageTitle}` : ""
         }`;
     }, [pageTitle, t]);
