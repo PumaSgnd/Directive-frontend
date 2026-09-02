@@ -187,6 +187,11 @@ const ControllerMatch = () => {
         setControllerElement,
     ] = useState<HTMLDivElement | null>(null);
 
+    const isNewRound =
+        activePertandingan != null &&
+        activePertandingan.status === "pause" &&
+        activePertandingan.ronde_mulai_at === null;
+
     const toggleFullscreen = async () => {
         try {
             if (!document.fullscreenElement) {
@@ -228,7 +233,6 @@ const ControllerMatch = () => {
         try {
             setActionLoading(true);
             setError(null);
-
             await finishRonde(
                 pertandinganId,
                 {
@@ -236,24 +240,25 @@ const ControllerMatch = () => {
                     sisa_detik: 0,
                 }
             );
-
             await Promise.all([
                 loadDetail(pertandinganId),
                 reloadPenilaian(),
             ]);
         } catch (err: unknown) {
             console.error(err);
-
-            setError(t("roundNotFinished"));
+            setError(
+                t("roundNotFinished")
+            );
         } finally {
             setActionLoading(false);
         }
+
     }, [
         pertandinganId,
         finishRonde,
         loadDetail,
         reloadPenilaian,
-        t
+        t,
     ]);
 
     const {
@@ -508,26 +513,17 @@ const ControllerMatch = () => {
     };
 
     const handleToggleTimer = () => {
-        if (
-            status ===
-            "belum_mulai"
-        ) {
+        if (status === "belum_mulai") {
             handleStart();
             return;
         }
 
-        if (
-            status ===
-            "berlangsung"
-        ) {
+        if (status === "berlangsung") {
             handlePause();
             return;
         }
 
-        if (
-            status ===
-            "pause"
-        ) {
+        if (status === "pause") {
             handleResume();
         }
     };
@@ -1320,15 +1316,10 @@ const ControllerMatch = () => {
                                 >
                                     {!pertandinganSelesai ? (
                                         <Button
-                                            onClick={
-                                                handleToggleTimer
-                                            }
-                                            disabled={
-                                                actionLoading
-                                            }
+                                            onClick={handleToggleTimer}
+                                            disabled={actionLoading}
                                             startIcon={
-                                                status ===
-                                                    "berlangsung" ? (
+                                                status === "berlangsung" ? (
                                                     <PauseIcon />
                                                 ) : (
                                                     <PlayArrowIcon />
@@ -1336,27 +1327,26 @@ const ControllerMatch = () => {
                                             }
                                             sx={{
                                                 bgcolor:
-                                                    status ===
-                                                        "berlangsung"
+                                                    status === "berlangsung"
                                                         ? "orange"
                                                         : "green",
-                                                color:
-                                                    "#fff",
+                                                color: "#fff",
                                                 px: 4,
                                                 fontSize: 18,
-                                                minWidth: 150,
+                                                minWidth: 180,
                                                 minHeight: 50,
                                                 fontWeight: 700,
                                                 "&:hover": {
                                                     bgcolor:
-                                                        status ===
-                                                            "berlangsung"
+                                                        status === "berlangsung"
                                                             ? "#ef6c00"
                                                             : "#2e7d32",
                                                 },
                                             }}
                                         >
-                                            {formattedTime}
+                                            {isNewRound
+                                                ? `Mulai Ronde ${rondeAktif} • ${formattedTime}`
+                                                : formattedTime}
                                         </Button>
                                     ) : (
                                         <Button

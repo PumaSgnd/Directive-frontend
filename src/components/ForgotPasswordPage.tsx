@@ -6,41 +6,29 @@ import {
     TextField,
     Typography,
     Paper,
+    Link,
     Alert,
     CircularProgress,
 } from "@mui/material";
 
-import {
-    useNavigate,
-    useSearchParams,
-} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import directiveLogo from "../assets/direc.png";
 import backgroundImage from "../assets/background.jpg";
 
 import { usePasswordReset } from "../hooks/usePasswordReset";
 
-export default function ResetPasswordPage() {
+export default function ForgotPasswordPage() {
     const navigate = useNavigate();
 
-    const [searchParams] =
-        useSearchParams();
-
-    const token =
-        searchParams.get("token");
-
-    const [password, setPassword] =
-        useState("");
-
-    const [confirmPassword, setConfirmPassword] =
-        useState("");
+    const [email, setEmail] = useState("");
 
     const {
         loading,
         success,
         error,
         message,
-        resetPassword,
+        forgotPassword,
     } = usePasswordReset();
 
     const handleSubmit = async (
@@ -48,45 +36,18 @@ export default function ResetPasswordPage() {
     ) => {
         event.preventDefault();
 
-        if (!token) {
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            return;
-        }
-
         try {
-            await resetPassword({
-                token,
-                password,
-                confirmPassword,
+            await forgotPassword({
+                email,
             });
         } catch {
-            // Error sudah ditangani hook
+            // Error sudah ditangani oleh hook
         }
     };
 
-    const handleLogin = () => {
-        navigate("/login");
+    const handleCreateAccount = () => {
+        navigate("/register");
     };
-
-    if (!token) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <Alert severity="error">
-                    Link reset password tidak valid.
-                </Alert>
-            </Box>
-        );
-    }
 
     return (
         <Box
@@ -109,7 +70,11 @@ export default function ResetPasswordPage() {
                     alt="Directive Logo"
                     style={{
                         height: 200,
+                        cursor: "pointer",
                     }}
+                    onClick={() =>
+                        window.location.reload()
+                    }
                 />
             </Box>
 
@@ -127,7 +92,7 @@ export default function ResetPasswordPage() {
                     fontWeight="bold"
                     gutterBottom
                 >
-                    Create New Password
+                    Reset Password
                 </Typography>
 
                 <Typography
@@ -135,8 +100,9 @@ export default function ResetPasswordPage() {
                     color="text.secondary"
                     mb={2}
                 >
-                    Masukkan password baru untuk
-                    akun Anda.
+                    Masukkan email yang terdaftar.
+                    Kami akan mengirimkan link untuk
+                    membuat password baru.
                 </Typography>
 
                 {success && (
@@ -161,46 +127,15 @@ export default function ResetPasswordPage() {
                     <form onSubmit={handleSubmit}>
                         <TextField
                             fullWidth
-                            label="New Password"
-                            type="password"
+                            label="Email Address"
+                            type="email"
                             margin="normal"
                             required
-                            value={password}
+                            value={email}
                             onChange={(event) =>
-                                setPassword(
+                                setEmail(
                                     event.target.value
                                 )
-                            }
-                            disabled={loading}
-                        />
-
-                        <TextField
-                            fullWidth
-                            label="Confirm Password"
-                            type="password"
-                            margin="normal"
-                            required
-                            value={
-                                confirmPassword
-                            }
-                            onChange={(event) =>
-                                setConfirmPassword(
-                                    event.target.value
-                                )
-                            }
-                            error={
-                                confirmPassword
-                                    .length > 0 &&
-                                password !==
-                                    confirmPassword
-                            }
-                            helperText={
-                                confirmPassword
-                                    .length > 0 &&
-                                password !==
-                                    confirmPassword
-                                    ? "Password tidak sama"
-                                    : ""
                             }
                             disabled={loading}
                         />
@@ -209,13 +144,7 @@ export default function ResetPasswordPage() {
                             type="submit"
                             fullWidth
                             variant="contained"
-                            disabled={
-                                loading ||
-                                !password ||
-                                !confirmPassword ||
-                                password !==
-                                    confirmPassword
-                            }
+                            disabled={loading}
                             sx={{
                                 mt: 3,
                                 borderRadius: 2,
@@ -231,25 +160,32 @@ export default function ResetPasswordPage() {
                                     color="inherit"
                                 />
                             ) : (
-                                "Reset Password"
+                                "Send Reset Password"
                             )}
                         </Button>
                     </form>
                 )}
 
-                {success && (
-                    <Button
-                        fullWidth
-                        variant="outlined"
-                        onClick={handleLogin}
+                <Typography
+                    mt={3}
+                    textAlign="center"
+                >
+                    Don’t have account?{" "}
+
+                    <Link
+                        component="button"
+                        onClick={
+                            handleCreateAccount
+                        }
+                        underline="hover"
                         sx={{
-                            mt: 2,
-                            borderRadius: 2,
+                            color: "#d32f2f",
+                            fontWeight: "bold",
                         }}
                     >
-                        Go to Login
-                    </Button>
-                )}
+                        Create Account
+                    </Link>
+                </Typography>
             </Paper>
         </Box>
     );

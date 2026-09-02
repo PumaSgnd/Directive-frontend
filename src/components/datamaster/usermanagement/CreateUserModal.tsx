@@ -123,13 +123,8 @@ export default function CreateUserModal() {
                                 {t("requiredNote")}
                             </Typography>
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("fullName")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 17.7 }}>
-                                    *
-                                </Typography>
                                 <TextField
+                                    label={t("fullName")}
                                     value={full_name}
                                     onChange={(e) => setName(e.target.value)}
                                     fullWidth
@@ -139,13 +134,8 @@ export default function CreateUserModal() {
                                 />
                             </Box>
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("username")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 14.2 }}>
-                                    *
-                                </Typography>
                                 <TextField
+                                    label={t("username")}
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value.toLowerCase())}
                                     fullWidth
@@ -155,13 +145,8 @@ export default function CreateUserModal() {
                                 />
                             </Box >
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("email")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 18.2 }}>
-                                    *
-                                </Typography>
                                 <TextField
+                                    label={t("email")}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value.toLowerCase())}
                                     fullWidth
@@ -171,13 +156,8 @@ export default function CreateUserModal() {
                                 />
                             </Box>
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("password")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 14.4 }}>
-                                    *
-                                </Typography>
                                 <TextField
+                                    label={t("password")}
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -200,14 +180,8 @@ export default function CreateUserModal() {
                                 />
                             </Box>
                             <Box display="flex" alignItems="center">
-                                <Typography variant="body1" sx={{ mr: 1 }}>
-                                    {t("role")}
-                                </Typography>
-                                <Typography variant="body1" color="error" sx={{ mr: 19.2 }}>
-                                    *
-                                </Typography>
-
                                 <TextField
+                                    label={t("role")}
                                     select
                                     value={role}
                                     onChange={(e) => setRole(e.target.value)}

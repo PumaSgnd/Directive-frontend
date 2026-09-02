@@ -34,7 +34,7 @@ export default function Login() {
     ), [state.showPassword, dispatch]);
 
     const handleLogoClick = () => window.location.reload();
-    const handleForgotPasswordClick = () => navigate("/reset-password");
+    const handleForgotPasswordClick = () => navigate("/forgot-password");
     const handleRegisterClick = () => navigate("/register");
 
     return (

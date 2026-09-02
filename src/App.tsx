@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import ResetPassword from "./components/ResetPassword";
+import ResetPasswordPage from "./components/ResetPassword";
 import Register from "./components/Register";
 import LoginGuard from "./components/guards/LoginGuard";
 import Dashboard from "./components/Dashboard";
@@ -33,6 +33,7 @@ import Scoreperempat from './components/score/Scoreperempat';
 import ScoresemiFinal from './components/score/ScoresemiFinal';
 import Profile from './components/profile/profile';
 import EditPenyisihan from './components/turnament/penyisihan/EditPenyisihanModal';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
 
 function App() {
   return (
@@ -42,7 +43,15 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<LoginGuard> <Dashboard /> </LoginGuard>}
         />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPasswordPage />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPasswordPage />}
+        />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
 

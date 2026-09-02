@@ -150,13 +150,8 @@ export default function EditPesertaModal() {
                 {t("requiredNote")}
               </Typography>
               <Box display="flex" alignItems="center">
-                <Typography variant="body1" sx={{ mr: 1 }}>
-                  {t("name")}
-                </Typography>
-                <Typography variant="body1" color="error" sx={{ mr: 17.4 }}>
-                  *
-                </Typography>
                 <TextField
+                  label={t("name")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   fullWidth
@@ -166,14 +161,9 @@ export default function EditPesertaModal() {
                 />
               </Box>
               <Box display="flex" alignItems="center">
-                <Typography variant="body1" sx={{ mr: 1 }}>
-                  {t("regional")}
-                </Typography>
-                <Typography variant="body1" color="error" sx={{ mr: 14.7 }}>
-                  *
-                </Typography>
                 <TextField
                   select
+                  label={t("regional")}
                   value={regional}
                   onChange={(e) => setRegional(e.target.value)}
                   fullWidth
@@ -189,19 +179,8 @@ export default function EditPesertaModal() {
                 </TextField>
               </Box >
               <Box display="flex" alignItems="center">
-                <Typography variant="body1" sx={{ mr: 1 }}>
-                  {t("weight")}
-                </Typography>
-
-                <Typography
-                  variant="body1"
-                  color="error"
-                  sx={{ mr: 16.3 }}
-                >
-                  *
-                </Typography>
-
                 <TextField
+                  label={t("weight")}
                   value={weight}
                   onChange={(e) => {
                     let value = e.target.value.replace(",", ".");
