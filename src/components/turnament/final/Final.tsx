@@ -20,7 +20,7 @@ import {
     Chip,
 } from "@mui/material";
 
-import { Add, Edit, Delete } from "@mui/icons-material";
+import { Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 

@@ -12,7 +12,6 @@ import {
     TableHead,
     TableRow,
     IconButton,
-    CircularProgress,
     Tooltip,
     Divider,
     MenuItem,
@@ -313,9 +312,15 @@ export default function PIC() {
                     <DeletePICDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
-                        onConfirm={() => {
-                            removePIC(selectedPIC.id);
-                            setOpenDelete(false);
+                        onConfirm={async () => {
+                            try {
+                                await removePIC(selectedPIC.id);
+                                setOpenDelete(false);
+                                setSelectedPIC(null);
+                                window.location.reload();
+                            } catch (error) {
+                                console.error("Gagal menghapus PIC:", error);
+                            }
                         }}
                         PICName={selectedPIC.name}
                     />

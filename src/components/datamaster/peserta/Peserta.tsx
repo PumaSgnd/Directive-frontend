@@ -12,7 +12,6 @@ import {
     TableHead,
     TableRow,
     IconButton,
-    CircularProgress,
     Tooltip,
     Divider,
     TextField,
@@ -335,9 +334,15 @@ export default function Peserta() {
                     <DeletePesertaDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
-                        onConfirm={() => {
-                            removePeserta(selectedPeserta.id);
-                            setOpenDelete(false);
+                        onConfirm={async () => {
+                            try {
+                                await removePeserta(selectedPeserta.id);
+                                setOpenDelete(false);
+                                setSelectedPeserta(null);
+                                window.location.reload();
+                            } catch (error) {
+                                console.error("Gagal menghapus Peserta:", error);
+                            }
                         }}
                         PesertaName={selectedPeserta.name}
                     />

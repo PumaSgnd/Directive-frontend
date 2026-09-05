@@ -12,7 +12,6 @@ import {
     TableHead,
     TableRow,
     IconButton,
-    CircularProgress,
     Tooltip,
     Divider,
     TextField,
@@ -326,9 +325,15 @@ export default function Juri() {
                     <DeleteJuriDialog
                         open={openDelete}
                         onClose={() => setOpenDelete(false)}
-                        onConfirm={() => {
-                            removeJuri(selectedJuri.id);
-                            setOpenDelete(false);
+                        onConfirm={async () => {
+                            try {
+                                await removeJuri(selectedJuri.id);
+                                setOpenDelete(false);
+                                setSelectedJuri(null);
+                                window.location.reload();
+                            } catch (error) {
+                                console.error("Gagal menghapus Juri:", error);
+                            }
                         }}
                         JuriName={selectedJuri.name}
                     />

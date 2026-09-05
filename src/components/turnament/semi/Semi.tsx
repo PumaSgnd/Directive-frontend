@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 
 import {
     Box,
-    Button,
     Card,
     CardContent,
     Typography,
@@ -13,7 +12,6 @@ import {
     TableHead,
     TableRow,
     IconButton,
-    CircularProgress,
     Tooltip,
     Divider,
     TextField,
@@ -22,7 +20,7 @@ import {
     Chip,
 } from "@mui/material";
 
-import { Add, Edit, Delete } from "@mui/icons-material";
+import { Edit, Delete } from "@mui/icons-material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 

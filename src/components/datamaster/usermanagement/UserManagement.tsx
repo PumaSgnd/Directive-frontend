@@ -350,9 +350,15 @@ export default function UserManagement() {
                         <DeleteUserDialog
                             open={openDelete}
                             onClose={() => setOpenDelete(false)}
-                            onConfirm={() => {
-                                removeUser(selectedUser.id);
-                                setOpenDelete(false);
+                            onConfirm={async () => {
+                                try {
+                                    await removeUser(selectedUser.id);
+                                    setOpenDelete(false);
+                                    setSelectedUser(null);
+                                    window.location.reload();
+                                } catch (error) {
+                                    console.error("Gagal menghapus User:", error);
+                                }
                             }}
                             UserName={selectedUser.full_name}
                         />
