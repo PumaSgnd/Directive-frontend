@@ -31,6 +31,7 @@ import { useJuriStore } from "../../../stores/JuriStore";
 import { useJuri } from "../../../hooks/useJuri";
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 
 export default function Juri() {
@@ -131,21 +132,6 @@ export default function Juri() {
         setPage(0);
     }, [search, sortBy, sortOrder]);
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -154,6 +140,7 @@ export default function Juri() {
                 minHeight: "100vh",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position: "fixed",
@@ -187,7 +174,7 @@ export default function Juri() {
                     overflowX: "hidden",
                     overflowY: "hidden",
                 }}
-            >
+            >                
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                     <Typography variant="h2" fontWeight={600} fontSize={26}>
                         {pageTitle}

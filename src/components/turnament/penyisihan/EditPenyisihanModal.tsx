@@ -53,6 +53,7 @@ import {
   UpdatePertandinganRequest,
   Pertandingan,
 } from "../../../types/pertandingan";
+import CustomLoading from "../../custom/CustomLoading";
 
 type FormType = {
   pesertaA: number | "";
@@ -176,10 +177,9 @@ export default function EditPenyisihan() {
 
   useEffect(() => {
     document.title =
-      `Turnament Pencak Silat${
-        pageTitle
-          ? " | " + pageTitle
-          : ""
+      `Turnament Pencak Silat${pageTitle
+        ? " | " + pageTitle
+        : ""
       }`;
   }, [
     pageTitle,
@@ -187,54 +187,35 @@ export default function EditPenyisihan() {
 
   useEffect(() => {
     const loadData = async () => {
+      // const startTime = Date.now();
+
       try {
         setInitialLoading(true);
-
-        await Promise.all([
-          loadPeserta(),
-          loadJuri(),
-        ]);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-
-    loadData();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (
-      !Number.isInteger(
-        pertandinganId
-      ) ||
-      pertandinganId <= 0
-    ) {
-      setInitialLoading(false);
-      return;
-    }
-
-    const loadDetail = async () => {
-      try {
-        setInitialLoading(true);
-
-        const data =
-          await fetchPertandinganById(
-            pertandinganId
-          );
 
         if (
-          data.babak !==
-          "penyisihan"
+          !Number.isInteger(pertandinganId) ||
+          pertandinganId <= 0
         ) {
           setDialog({
             open: true,
             status: "error",
-            message:
-              t("matchIsNotQualification"),
+            message: t("matchNotFound"),
+          });
+
+          return;
+        }
+
+        const [_, __, data] = await Promise.all([
+          loadPeserta(),
+          loadJuri(),
+          fetchPertandinganById(pertandinganId),
+        ]);
+
+        if (data.babak !== "penyisihan") {
+          setDialog({
+            open: true,
+            status: "error",
+            message: t("matchIsNotQualification"),
           });
 
           return;
@@ -242,44 +223,29 @@ export default function EditPenyisihan() {
 
         setPertandingan(data);
 
-        const juriUtama =
-          data.juri.filter(
-            (juri) =>
-              juri.peran === "utama" &&
-              Boolean(juri.aktif)
-          );
+        const juriUtama = data.juri.filter(
+          (juri) =>
+            juri.peran === "utama" &&
+            Boolean(juri.aktif)
+        );
 
-        const juriCadangan =
-          data.juri.filter(
-            (juri) =>
-              juri.peran === "cadangan" &&
-              Boolean(juri.aktif)
-          );
+        const juriCadangan = data.juri.filter(
+          (juri) =>
+            juri.peran === "cadangan" &&
+            Boolean(juri.aktif)
+        );
 
         setForm({
-          pesertaA:
-            data.peserta1_id ?? "",
+          pesertaA: data.peserta1_id ?? "",
+          pesertaB: data.peserta2_id ?? "",
 
-          pesertaB:
-            data.peserta2_id ?? "",
+          juriUtama1: juriUtama[0]?.id ?? "",
+          juriUtama2: juriUtama[1]?.id ?? "",
+          juriUtama3: juriUtama[2]?.id ?? "",
 
-          juriUtama1:
-            juriUtama[0]?.id ?? "",
-
-          juriUtama2:
-            juriUtama[1]?.id ?? "",
-
-          juriUtama3:
-            juriUtama[2]?.id ?? "",
-
-          juriCadangan1:
-            juriCadangan[0]?.id ?? "",
-
-          juriCadangan2:
-            juriCadangan[1]?.id ?? "",
-
-          juriCadangan3:
-            juriCadangan[2]?.id ?? "",
+          juriCadangan1: juriCadangan[0]?.id ?? "",
+          juriCadangan2: juriCadangan[1]?.id ?? "",
+          juriCadangan3: juriCadangan[2]?.id ?? "",
 
           durasiRonde:
             data.durasi_ronde_menit === 3
@@ -297,15 +263,15 @@ export default function EditPenyisihan() {
             t("getMatchError"),
         });
       } finally {
-        setInitialLoading(false);
+        setTimeout(() => {
+          setInitialLoading(false);
+        }, 4000);
       }
     };
 
-    loadDetail();
-  }, [
-    pertandinganId,
-    t,
-  ]);
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectedPesertaA =
     useMemo(() => {
@@ -674,21 +640,6 @@ export default function EditPenyisihan() {
       }
     };
 
-  if (initialLoading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   if (
     !Number.isInteger(
       pertandinganId
@@ -720,32 +671,60 @@ export default function EditPenyisihan() {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "row",
-        minHeight: "100vh",
-        width: "100vw",
-        overflowX: "hidden",
+        display:
+          "flex",
+        width: "100%",
+        minHeight:
+          "100vh",
       }}
     >
+      {initialLoading && <CustomLoading />}
       <Box
         sx={{
-          width: drawerWidth,
-          transition:
-            "width 0.3s",
-          position: "fixed",
+          position:
+            "fixed",
+          top: 0,
+          left: 0,
+          width:
+            drawerWidth,
+          height:
+            "100vh",
+          zIndex: 1200,
         }}
       >
         <Sidebar />
       </Box>
 
       <Box
-        flexGrow={1}
-        ml={`${drawerWidth}px`}
-        padding={3}
-        fontFamily="Roboto, sans-serif"
         sx={{
+          position:
+            "absolute",
+          top: 0,
+          left:
+            `${drawerWidth}px`,
+          right: 0,
+          minHeight:
+            "100vh",
+          boxSizing:
+            "border-box",
+          p: 3,
+
+          fontFamily:
+            "Roboto, sans-serif",
+
+          transition:
+            "margin-left 0.3s, width 0.3s",
+
           background:
             "linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)",
+
+          color:
+            "black",
+
+          overflowX:
+            "hidden",
+          overflowY:
+            "hidden",
         }}
       >
         <Box
@@ -881,17 +860,17 @@ export default function EditPenyisihan() {
                 helperText={
                   selectedPesertaA?.weight != null
                     ? t(
-                        "participantWeightDifference",
-                        {
-                          max:
-                            MAX_SELIBIH_BERAT,
-                          weight:
-                            selectedPesertaA.weight,
-                        }
-                      )
+                      "participantWeightDifference",
+                      {
+                        max:
+                          MAX_SELIBIH_BERAT,
+                        weight:
+                          selectedPesertaA.weight,
+                      }
+                    )
                     : t(
-                        "selectParticipant1"
-                      )
+                      "selectParticipant1"
+                    )
                 }
               >
                 {pesertaBList.length === 0 ? (
@@ -926,19 +905,19 @@ export default function EditPenyisihan() {
 
               {selectedPesertaA?.weight !=
                 null && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  {t(
-                    "maximumWeightDifference",
-                    {
-                      max:
-                        MAX_SELIBIH_BERAT,
-                    }
-                  )}
-                </Typography>
-              )}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                  >
+                    {t(
+                      "maximumWeightDifference",
+                      {
+                        max:
+                          MAX_SELIBIH_BERAT,
+                      }
+                    )}
+                  </Typography>
+                )}
 
               <Typography
                 variant="h6"
@@ -1150,7 +1129,7 @@ export default function EditPenyisihan() {
         >
           <DialogTitle>
             {dialog.status ===
-            "success"
+              "success"
               ? t("success")
               : "Error"}
           </DialogTitle>

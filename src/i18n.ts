@@ -224,7 +224,12 @@ i18n
           hitungTurnamen: "Tournament Calculation",
           controller: "Controller",
           skor: "Score",
-          history: "History"
+          history: "History",
+
+          // Delete
+          confirmDelete: "Confirm Delete",
+          confirmDeleteMessage: "Are you sure you want to delete this match?",
+          delete: "Delete",          
         }
       },
 
@@ -434,7 +439,12 @@ i18n
           hitungTurnamen: "Hitung Turnamen",
           controller: "Controller",
           skor: "Skor",
-          history: "Riwayat"
+          history: "Riwayat",
+
+          // Delete
+          confirmDelete: "Konfirmasi Hapus",
+          confirmDeleteMessage: "Apakah kamu yakin ingin menghapus pertandingan ini?",
+          delete: "Hapus"
         }
       }
     }

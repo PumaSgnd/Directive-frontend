@@ -1,4 +1,4 @@
-//{*/pages/pertandingan/perempat_final/PertandinganDetailDialog.tsx*}
+//{*/pages/pertandingan/final/PertandinganDetailDialog.tsx*}
 import { useEffect, useState } from "react";
 import {
     Dialog,
@@ -160,7 +160,7 @@ export default function PertandinganDetailDialog({
                                 {t("durasi")}
                             </Typography>
                             <Typography variant="body2" fontWeight={600}>
-                                {detail.durasi_menit} {t("menit")}
+                                {detail.durasi_ronde_menit} {t("menit")}
                             </Typography>
 
                             <Typography variant="body2" color="text.secondary">
@@ -204,17 +204,86 @@ export default function PertandinganDetailDialog({
 
                         {/* JURI */}
                         <Box>
-                            <Typography variant="body2" color="text.secondary" mb={1}>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                mb={2}
+                            >
                                 {t("juri")}
                             </Typography>
+
                             {detail.juri && detail.juri.length > 0 ? (
-                                <Box display="flex" flexWrap="wrap" gap={1}>
-                                    {detail.juri.map((j) => (
-                                        <Chip key={j.id} label={j.full_name} size="small" />
-                                    ))}
+                                <Box
+                                    display="flex"
+                                    flexDirection="column"
+                                    gap={2}
+                                >
+
+                                    {/* JURI UTAMA */}
+                                    <Box>
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={600}
+                                            mb={1}
+                                        >
+                                            Juri Utama
+                                        </Typography>
+
+                                        <Box
+                                            display="flex"
+                                            flexWrap="wrap"
+                                            gap={1}
+                                        >
+                                            {detail.juri
+                                                .filter(
+                                                    (j) =>
+                                                        j.peran === "utama"
+                                                )
+                                                .map((j) => (
+                                                    <Chip
+                                                        key={j.id}
+                                                        label={j.full_name}
+                                                        size="small"
+                                                    />
+                                                ))}
+                                        </Box>
+                                    </Box>
+
+                                    {/* JURI CADANGAN */}
+                                    <Box>
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={600}
+                                            mb={1}
+                                        >
+                                            Juri Cadangan
+                                        </Typography>
+
+                                        <Box
+                                            display="flex"
+                                            flexWrap="wrap"
+                                            gap={1}
+                                        >
+                                            {detail.juri
+                                                .filter(
+                                                    (j) =>
+                                                        j.peran === "cadangan"
+                                                )
+                                                .map((j) => (
+                                                    <Chip
+                                                        key={j.id}
+                                                        label={j.full_name}
+                                                        size="small"
+                                                    />
+                                                ))}
+                                        </Box>
+                                    </Box>
+
                                 </Box>
                             ) : (
-                                <Typography variant="body2">-</Typography>
+                                <Typography variant="body2">
+                                    -
+                                </Typography>
                             )}
                         </Box>
                     </Box>

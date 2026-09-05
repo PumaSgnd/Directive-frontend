@@ -31,6 +31,7 @@ import { usePesertaStore } from "../../../stores/PesertaStore";
 import { usePeserta } from "../../../hooks/usePeserta";
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 type SortByType = "default" | "no" | "name" | "regional" | "weight";
 
@@ -138,21 +139,6 @@ export default function Peserta() {
         setPage(0);
     }, [search, sortBy, sortOrder]);
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     const formatText = (text: string) => {
         if (!text) return "";
         return text
@@ -169,6 +155,7 @@ export default function Peserta() {
                 minHeight: "100vh",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position: "fixed",

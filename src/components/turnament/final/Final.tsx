@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 
 import {
     Box,
-    Button,
     Card,
     CardContent,
     Typography,
@@ -13,7 +12,6 @@ import {
     TableHead,
     TableRow,
     IconButton,
-    CircularProgress,
     Tooltip,
     Divider,
     TextField,
@@ -35,9 +33,12 @@ import PertandinganDetailDialog from "./PertandinganDetailDialog";
 import { useStore } from "../../../hooks/useStore";
 import { usePertandinganStore } from "../../../stores/pertandinganStore";
 import { usePertandingan } from "../../../hooks/usePertandingan";
+import { fetchScoreboard } from "../../../api/turnament/penilaian/penilaian";
+import type { Scoreboard } from "../../../types/penilaian";
 
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function Final() {
     const navigate = useNavigate();
@@ -46,7 +47,10 @@ export default function Final() {
         sidebarOpen,
         pageTitle,
         setPageTitle,
+        user,
     } = useStore();
+
+    const isAdmin = user?.role === "admin";
 
     const {
         pertandingan,
@@ -92,6 +96,9 @@ export default function Final() {
     const [isFullscreen, setIsFullscreen] =
         useState(false);
 
+    const [liveScores, setLiveScores] =
+        useState<Record<number, Scoreboard>>({});
+
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -136,6 +143,93 @@ export default function Final() {
             }`;
     }, [pageTitle, t]);
 
+    useEffect(() => {
+        if (
+            !pertandingan ||
+            pertandingan.length === 0
+        ) {
+            setLiveScores({});
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadLiveScores = async () => {
+            try {
+                const results =
+                    await Promise.all(
+                        pertandingan.map(
+                            async (match) => {
+                                try {
+                                    const scoreboard =
+                                        await fetchScoreboard(
+                                            match.id
+                                        );
+
+                                    return {
+                                        id: match.id,
+                                        scoreboard,
+                                    };
+                                } catch (error) {
+                                    console.error(
+                                        `Gagal mengambil scoreboard pertandingan ${match.id}:`,
+                                        error
+                                    );
+
+                                    return {
+                                        id: match.id,
+                                        scoreboard: null,
+                                    };
+                                }
+                            }
+                        )
+                    );
+
+                if (cancelled) return;
+
+                setLiveScores((prev) => {
+                    const next = {
+                        ...prev,
+                    };
+
+                    results.forEach(
+                        ({
+                            id,
+                            scoreboard,
+                        }) => {
+                            if (scoreboard) {
+                                next[id] =
+                                    scoreboard;
+                            }
+                        }
+                    );
+
+                    return next;
+                });
+            } catch (error) {
+                console.error(
+                    "Gagal mengambil live scoreboard:",
+                    error
+                );
+            }
+        };
+
+        // Ambil langsung saat halaman dibuka
+        loadLiveScores();
+
+        // Update setiap 1 detik
+        const interval =
+            setInterval(
+                loadLiveScores,
+                1000
+            );
+
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
+    }, [pertandingan]);
+
     const formatText = (
         text?: string | null
     ) => {
@@ -165,75 +259,78 @@ export default function Final() {
         return `${weight} kg`;
     };
 
-    const getRoundScore = (
-        match: any,
+    const getRoundScores = (
+        matchId: number,
         round: 1 | 2 | 3
     ) => {
-        const possibleFields = [
-            `skor_ronde_${round}`,
-            `score_ronde_${round}`,
-            `skorRonde${round}`,
-            `scoreRonde${round}`,
-        ];
+        const scoreboard =
+            liveScores[matchId];
 
-        for (
-            const field of possibleFields
-        ) {
-            if (
-                match[field] !==
-                undefined &&
-                match[field] !== null
-            ) {
-                return match[field];
-            }
+        if (!scoreboard) {
+            return {
+                peserta1: 0,
+                peserta2: 0,
+            };
         }
 
-        if (
-            match.skor_ronde &&
-            match.skor_ronde[round]
-        ) {
-            return match.skor_ronde[round];
-        }
+        const peserta1 =
+            scoreboard.peserta1.per_ronde.find(
+                (item) =>
+                    item.ronde === round
+            );
 
-        return null;
+        const peserta2 =
+            scoreboard.peserta2.per_ronde.find(
+                (item) =>
+                    item.ronde === round
+            );
+
+        return {
+            peserta1:
+                peserta1?.total ?? 0,
+
+            peserta2:
+                peserta2?.total ?? 0,
+        };
     };
 
-    const formatRoundScore = (
-        match: any,
-        round: 1 | 2 | 3
-    ) => {
+    const RoundScore = ({
+        matchId,
+        round,
+    }: {
+        matchId: number;
+        round: 1 | 2 | 3;
+    }) => {
         const score =
-            getRoundScore(
-                match,
+            getRoundScores(
+                matchId,
                 round
             );
 
-        if (
-            score === null ||
-            score === undefined
-        ) {
-            return "0";
-        }
-
-        if (
-            typeof score === "object"
-        ) {
-            const peserta1 =
-                score.peserta1 ??
-                score.peserta1_score ??
-                score.score1 ??
-                "0";
-
-            const peserta2 =
-                score.peserta2 ??
-                score.peserta2_score ??
-                score.score2 ??
-                "0";
-
-            return `${peserta1} - ${peserta2}`;
-        }
-
-        return String(score);
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    width: "100%",
+                }}
+            >
+                <Chip
+                    label={`${score.peserta1} - ${score.peserta2}`}
+                    size="small"
+                    sx={{
+                        minWidth: 65,
+                        height: 28,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        "& .MuiChip-label": {
+                            px: 1.5,
+                        },
+                    }}
+                />
+            </Box>
+        );
     };
 
     const getJudges = (
@@ -432,25 +529,6 @@ export default function Final() {
         }
     };
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight:
-                        "100vh",
-                    display:
-                        "flex",
-                    justifyContent:
-                        "center",
-                    alignItems:
-                        "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -461,8 +539,7 @@ export default function Final() {
                     "100vh",
             }}
         >
-            {/* SIDEBAR */}
-
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position:
@@ -478,8 +555,6 @@ export default function Final() {
             >
                 <Sidebar />
             </Box>
-
-            {/* CONTENT */}
 
             <Box
                 sx={{
@@ -513,8 +588,6 @@ export default function Final() {
                         "hidden",
                 }}
             >
-                {/* HEADER */}
-
                 <Box
                     display="flex"
                     justifyContent="space-between"
@@ -559,8 +632,6 @@ export default function Final() {
                 </Box>
 
                 <Divider />
-
-                {/* FILTER */}
 
                 <Box
                     display="flex"
@@ -632,8 +703,6 @@ export default function Final() {
                     />
                 </Box>
 
-                {/* TABLE */}
-
                 <Card
                     sx={{
                         mt: 3,
@@ -661,8 +730,6 @@ export default function Final() {
                                 <TableHead>
                                     <TableRow>
 
-                                        {/* NO */}
-
                                         <TableCell
                                             align="center"
                                             sx={{
@@ -675,8 +742,6 @@ export default function Final() {
                                             )}
                                         </TableCell>
 
-                                        {/* PESERTA */}
-
                                         <TableCell
                                             align="center"
                                             sx={{
@@ -686,8 +751,6 @@ export default function Final() {
                                         >
                                             {t("peserta")}
                                         </TableCell>
-
-                                        {/* RONDE 1 */}
 
                                         <TableCell
                                             align="center"
@@ -699,8 +762,6 @@ export default function Final() {
                                             {t("round1")}
                                         </TableCell>
 
-                                        {/* RONDE 2 */}
-
                                         <TableCell
                                             align="center"
                                             sx={{
@@ -710,8 +771,6 @@ export default function Final() {
                                         >
                                             {t("round2")}
                                         </TableCell>
-
-                                        {/* RONDE 3 */}
 
                                         <TableCell
                                             align="center"
@@ -723,8 +782,6 @@ export default function Final() {
                                             {t("round3")}
                                         </TableCell>
 
-                                        {/* JURI UTAMA */}
-
                                         <TableCell
                                             align="center"
                                             sx={{
@@ -734,8 +791,6 @@ export default function Final() {
                                             {t("mainJudge")}
                                         </TableCell>
 
-                                        {/* JURI CADANGAN */}
-
                                         <TableCell
                                             align="center"
                                             sx={{
@@ -744,8 +799,6 @@ export default function Final() {
                                         >
                                             {t("reserveJudge")}
                                         </TableCell>
-
-                                        {/* STATUS */}
 
                                         <TableCell
                                             align="center"
@@ -759,20 +812,16 @@ export default function Final() {
                                             )}
                                         </TableCell>
 
-                                        {/* ACTIONS */}
-
-                                        <TableCell
-                                            align="center"
-                                            sx={{
-                                                maxWidth:
-                                                    20,
-                                            }}
-                                        >
-                                            {t(
-                                                "actions"
-                                            )}
-                                        </TableCell>
-
+                                        {isAdmin && (
+                                            <TableCell
+                                                align="center"
+                                                sx={{
+                                                    maxWidth: 20,
+                                                }}
+                                            >
+                                                {t("actions")}
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 </TableHead>
 
@@ -813,8 +862,6 @@ export default function Final() {
                                                     }}
                                                 >
 
-                                                    {/* NO */}
-
                                                     <TableCell align="center">
                                                         {
                                                             page *
@@ -823,8 +870,6 @@ export default function Final() {
                                                             1
                                                         }
                                                     </TableCell>
-
-                                                    {/* PESERTA */}
 
                                                     <TableCell align="center">
                                                         <Box
@@ -860,43 +905,26 @@ export default function Final() {
                                                         </Box>
                                                     </TableCell>
 
-                                                    {/* RONDE 1 */}
-
                                                     <TableCell align="center">
-                                                        <Chip
-                                                            label={formatRoundScore(
-                                                                match,
-                                                                1
-                                                            )}
-                                                            size="small"
+                                                        <RoundScore
+                                                            matchId={match.id}
+                                                            round={1}
                                                         />
                                                     </TableCell>
 
-                                                    {/* RONDE 2 */}
-
                                                     <TableCell align="center">
-                                                        <Chip
-                                                            label={formatRoundScore(
-                                                                match,
-                                                                2
-                                                            )}
-                                                            size="small"
+                                                        <RoundScore
+                                                            matchId={match.id}
+                                                            round={2}
                                                         />
                                                     </TableCell>
 
-                                                    {/* RONDE 3 */}
-
                                                     <TableCell align="center">
-                                                        <Chip
-                                                            label={formatRoundScore(
-                                                                match,
-                                                                3
-                                                            )}
-                                                            size="small"
+                                                        <RoundScore
+                                                            matchId={match.id}
+                                                            round={3}
                                                         />
                                                     </TableCell>
-
-                                                    {/* JURI UTAMA */}
 
                                                     <TableCell align="center">
                                                         <Box
@@ -927,8 +955,6 @@ export default function Final() {
                                                         </Box>
                                                     </TableCell>
 
-                                                    {/* JURI CADANGAN */}
-
                                                     <TableCell align="center">
                                                         <Box
                                                             display="flex"
@@ -958,8 +984,6 @@ export default function Final() {
                                                         </Box>
                                                     </TableCell>
 
-                                                    {/* STATUS */}
-
                                                     <TableCell align="center">
                                                         <Chip
                                                             label={getStatusText(
@@ -972,45 +996,35 @@ export default function Final() {
                                                         />
                                                     </TableCell>
 
-                                                    {/* ACTIONS */}
+                                                    {isAdmin && (
+                                                        <TableCell align="center">
+                                                            <IconButton
+                                                                color="primary"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
 
-                                                    <TableCell align="center">
+                                                                    navigate(
+                                                                        `edit-final/${match.id}`
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Edit fontSize="small" />
+                                                            </IconButton>
 
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={(
-                                                                e
-                                                            ) => {
-                                                                e.stopPropagation();
+                                                            <IconButton
+                                                                color="error"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
 
-                                                                navigate(
-                                                                    `/pertandingan/edit/${match.id}`
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
+                                                                    setSelectedPertandingan(match);
 
-                                                        <IconButton
-                                                            color="error"
-                                                            onClick={(
-                                                                e
-                                                            ) => {
-                                                                e.stopPropagation();
-
-                                                                setSelectedPertandingan(
-                                                                    match
-                                                                );
-
-                                                                setOpenDelete(
-                                                                    true
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-
-                                                    </TableCell>
+                                                                    setOpenDelete(true);
+                                                                }}
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    )}
 
                                                 </TableRow>
                                             );
@@ -1020,8 +1034,6 @@ export default function Final() {
                                 </TableBody>
                             </Table>
                         </TableContainer>
-
-                        {/* PAGINATION */}
 
                         <Box
                             display="flex"
@@ -1093,12 +1105,10 @@ export default function Final() {
                                             "1px solid #ccc",
                                     },
                                 }}
-                            />                        
+                            />
                         </Box>
                     </CardContent>
                 </Card>
-
-                {/* DELETE */}
 
                 {selectedPertandingan && (
                     <DeletePesertaDialog
@@ -1111,25 +1121,18 @@ export default function Final() {
                             )
                         }
                         onConfirm={async () => {
-                            await removePertandingan(
-                                selectedPertandingan.id
-                            );
-
-                            setOpenDelete(
-                                false
-                            );
-
-                            setSelectedPertandingan(
-                                null
-                            );
+                            try {
+                                await removePertandingan(selectedPertandingan.id);
+                                setOpenDelete(false);
+                                setSelectedPertandingan(null);
+                                window.location.reload();
+                            } catch (error) {
+                                console.error("Gagal menghapus pertandingan:", error);
+                            }
                         }}
-                        PesertaName={`${selectedPertandingan.peserta1_name} vs ${selectedPertandingan.peserta2_name ??
-                            t("bye")
-                            }`}
+                        peserta1_name={selectedPertandingan.peserta1_name} peserta2_name={selectedPertandingan.peserta2_name ?? t("bye")}
                     />
                 )}
-
-                {/* DETAIL */}
 
                 <PertandinganDetailDialog
                     open={

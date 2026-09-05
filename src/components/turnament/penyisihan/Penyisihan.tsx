@@ -40,6 +40,7 @@ import type { Scoreboard } from "../../../types/penilaian";
 
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function Penyisihan() {
     const navigate = useNavigate();
@@ -48,7 +49,10 @@ export default function Penyisihan() {
         sidebarOpen,
         pageTitle,
         setPageTitle,
+        user,
     } = useStore();
+
+    const isAdmin = user?.role === "admin";
 
     const {
         pertandingan,
@@ -527,25 +531,6 @@ export default function Penyisihan() {
         }
     };
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight:
-                        "100vh",
-                    display:
-                        "flex",
-                    justifyContent:
-                        "center",
-                    alignItems:
-                        "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -556,6 +541,7 @@ export default function Penyisihan() {
                     "100vh",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position:
@@ -828,18 +814,16 @@ export default function Penyisihan() {
                                             )}
                                         </TableCell>
 
-                                        <TableCell
-                                            align="center"
-                                            sx={{
-                                                maxWidth:
-                                                    20,
-                                            }}
-                                        >
-                                            {t(
-                                                "actions"
-                                            )}
-                                        </TableCell>
-
+                                        {isAdmin && (
+                                            <TableCell
+                                                align="center"
+                                                sx={{
+                                                    maxWidth: 20,
+                                                }}
+                                            >
+                                                {t("actions")}
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 </TableHead>
 
@@ -1014,43 +998,35 @@ export default function Penyisihan() {
                                                         />
                                                     </TableCell>
 
-                                                    <TableCell align="center">
+                                                    {isAdmin && (
+                                                        <TableCell align="center">
+                                                            <IconButton
+                                                                color="primary"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
 
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={(
-                                                                e
-                                                            ) => {
-                                                                e.stopPropagation();
+                                                                    navigate(
+                                                                        `edit-penyisihan/${match.id}`
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Edit fontSize="small" />
+                                                            </IconButton>
 
-                                                                navigate(
-                                                                    `edit-penyisihan/${match.id}`
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
+                                                            <IconButton
+                                                                color="error"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
 
-                                                        <IconButton
-                                                            color="error"
-                                                            onClick={(
-                                                                e
-                                                            ) => {
-                                                                e.stopPropagation();
+                                                                    setSelectedPertandingan(match);
 
-                                                                setSelectedPertandingan(
-                                                                    match
-                                                                );
-
-                                                                setOpenDelete(
-                                                                    true
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-
-                                                    </TableCell>
+                                                                    setOpenDelete(true);
+                                                                }}
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    )}
 
                                                 </TableRow>
                                             );
@@ -1133,22 +1109,20 @@ export default function Penyisihan() {
                                 }}
                             />
 
-                            <Button
-                                variant="contained"
-                                color="error"
-                                startIcon={
-                                    <Add />
-                                }
-                                onClick={() =>
-                                    navigate(
-                                        "/pertandingan/penyisihan/create-penyisihan"
-                                    )
-                                }
-                            >
-                                {t(
-                                    "create"
-                                )}
-                            </Button>
+                            {isAdmin && (
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    startIcon={<Add />}
+                                    onClick={() =>
+                                        navigate(
+                                            "/pertandingan/penyisihan/create-penyisihan"
+                                        )
+                                    }
+                                >
+                                    {t("create")}
+                                </Button>
+                            )}
                         </Box>
                     </CardContent>
                 </Card>
@@ -1163,22 +1137,17 @@ export default function Penyisihan() {
                                 false
                             )
                         }
-                        onConfirm={async () => {
-                            await removePertandingan(
-                                selectedPertandingan.id
-                            );
-
-                            setOpenDelete(
-                                false
-                            );
-
-                            setSelectedPertandingan(
-                                null
-                            );
+                        onConfirm={async () => { 
+                            try { 
+                                await removePertandingan(selectedPertandingan.id); 
+                                setOpenDelete(false);
+                                setSelectedPertandingan(null); 
+                                window.location.reload(); 
+                            } catch (error) { 
+                                console.error("Gagal menghapus pertandingan:", error); 
+                            } 
                         }}
-                        PesertaName={`${selectedPertandingan.peserta1_name} vs ${selectedPertandingan.peserta2_name ??
-                            t("bye")
-                            }`}
+                        peserta1_name={selectedPertandingan.peserta1_name} peserta2_name={selectedPertandingan.peserta2_name ?? t("bye")}
                     />
                 )}
 

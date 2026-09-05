@@ -12,7 +12,9 @@ export const useJuri = () => {
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 4000);
     }
   };
 

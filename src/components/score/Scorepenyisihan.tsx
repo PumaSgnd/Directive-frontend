@@ -12,7 +12,6 @@ import {
     TableHead,
     TableRow,
     IconButton,
-    CircularProgress,
     Tooltip,
     Divider,
     TextField,
@@ -25,7 +24,6 @@ import {
 import {
     Fullscreen,
     FullscreenExit,
-    Search,
     Monitor,
     Add,
 } from "@mui/icons-material";
@@ -44,6 +42,7 @@ import {
 
 import PaginationActions from "../custom/PaginationActions";
 import ExportPdf from "../custom/exportPdf";
+import CustomLoading from "../custom/CustomLoading";
 
 const POLL_INTERVAL_MS = 1000;
 
@@ -516,21 +515,6 @@ export default function Score() {
         );
     };
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -539,6 +523,7 @@ export default function Score() {
                 minHeight: "100vh",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position: "fixed",

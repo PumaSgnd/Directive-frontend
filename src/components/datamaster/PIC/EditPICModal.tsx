@@ -28,6 +28,7 @@ import { UpdateUserPayload } from "../../../types/user";
 import { useTranslation } from "react-i18next";
 import { fetchUser } from "../../../api/datamaster/user/UserManagement";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function EditPICModal() {
   const navigate = useNavigate();
@@ -63,7 +64,9 @@ export default function EditPICModal() {
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 4000);
       }
     };
 
@@ -107,23 +110,9 @@ export default function EditPICModal() {
     navigate("/datamaster/pic");
   };
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
+      {loading && <CustomLoading />}
       <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
         <Sidebar />
       </Box>

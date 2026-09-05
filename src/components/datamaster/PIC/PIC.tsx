@@ -31,6 +31,7 @@ import { usePICStore } from "../../../stores/PICStore";
 import { usePIC } from "../../../hooks/usePIC";
 import PaginationActions from "../../custom/PaginationActions";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function PIC() {
     const navigate = useNavigate();
@@ -130,21 +131,6 @@ export default function PIC() {
         setPage(0);
     }, [search, sortBy, sortOrder]);
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -153,6 +139,7 @@ export default function PIC() {
                 minHeight: "100vh",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position: "fixed",

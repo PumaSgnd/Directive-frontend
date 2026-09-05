@@ -64,7 +64,9 @@ export const usePertandingan = (
                     "Gagal mengambil data pertandingan."
                 );
             } finally {
-                setLoading(false);
+                setTimeout(() => {
+                    setLoading(false);
+                }, 4000);
             }
         }, [
             babak,

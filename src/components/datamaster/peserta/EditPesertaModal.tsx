@@ -25,6 +25,7 @@ import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
 import InputAdornment from "@mui/material/InputAdornment";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function EditPesertaModal() {
   const navigate = useNavigate();
@@ -55,7 +56,9 @@ export default function EditPesertaModal() {
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 4000);
       }
     };
 
@@ -108,23 +111,9 @@ export default function EditPesertaModal() {
     [name, regional, weight]
   );
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
+      {loading && <CustomLoading />}
       <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
         <Sidebar />
       </Box>

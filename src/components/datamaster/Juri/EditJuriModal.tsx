@@ -28,6 +28,7 @@ import { VisibilityOff, Visibility } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { fetchUser } from "../../../api/datamaster/user/UserManagement";
 import { UpdateUserPayload } from "../../../types/user";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function EditJuriModal() {
   const navigate = useNavigate();
@@ -63,7 +64,9 @@ export default function EditJuriModal() {
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 4000);
       }
     };
 
@@ -71,12 +74,12 @@ export default function EditJuriModal() {
   }, [id, t, navigate, setPageTitle]);
 
   useEffect(() => {
-        document.title =
-            `${t("turnamentTitle")}${pageTitle
-                ? " | " + pageTitle
-                : ""
-            }`;
-    }, [pageTitle, t]);
+    document.title =
+      `${t("turnamentTitle")}${pageTitle
+        ? " | " + pageTitle
+        : ""
+      }`;
+  }, [pageTitle, t]);
 
   const handleSave = async () => {
     try {
@@ -107,23 +110,9 @@ export default function EditJuriModal() {
     navigate("/datamaster/juri");
   };
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
+      {loading && <CustomLoading />}
       <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
         <Sidebar />
       </Box>

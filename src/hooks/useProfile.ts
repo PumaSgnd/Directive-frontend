@@ -55,9 +55,9 @@ export const useProfile = () => {
             throw error;
 
         } finally {
-
-            setLoading(false);
-
+            setTimeout(() => {
+                setLoading(false);
+            }, 4000);
         }
     };
 

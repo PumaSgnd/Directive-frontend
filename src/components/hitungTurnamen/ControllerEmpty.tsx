@@ -4,17 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { useStore } from "../../hooks/useStore";
 import Sidebar from "../bar/Sidebar";
 import UserMenu from "../header/UserMenu";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import CustomLoading from "../custom/CustomLoading";
 
 const ControllerEmpty = () => {
     const navigate = useNavigate();
     const { sidebarOpen, pageTitle, setPageTitle } = useStore();
     const { t } = useTranslation();
+    const [loading, setLoading] = useState(true);
 
     const drawerWidth = sidebarOpen ? 260 : 30;
 
     useEffect(() => {
         setPageTitle(t("hitungTurnamen"));
+
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 4000);
+
+        return () => clearTimeout(timer);
     }, [setPageTitle, t]);
 
     return (
@@ -27,6 +35,7 @@ const ControllerEmpty = () => {
                 overflowX: "hidden",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     width: drawerWidth,

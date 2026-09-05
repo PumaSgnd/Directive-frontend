@@ -28,6 +28,7 @@ import UserMenu from "../../header/UserMenu";
 import { useStore } from "../../../hooks/useStore";
 import { useTranslation } from "react-i18next";
 import { UpdateUserPayload } from "../../../types/user";
+import CustomLoading from "../../custom/CustomLoading";
 
 export default function EdituserModal() {
   const navigate = useNavigate();
@@ -63,7 +64,9 @@ export default function EdituserModal() {
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 4000);
       }
     };
 
@@ -107,23 +110,9 @@ export default function EdituserModal() {
     navigate("/datamaster/usermanagement");
   };
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
+      {loading && <CustomLoading />}
       <Box sx={{ width: drawerWidth, transition: "width 0.3s", position: "fixed" }}>
         <Sidebar />
       </Box>

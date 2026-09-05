@@ -6,7 +6,6 @@ import {
     IconButton,
     Tooltip,
     Divider,
-    CircularProgress,
 } from "@mui/material";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
@@ -24,6 +23,7 @@ import { useStore } from "../hooks/useStore";
 
 import { fetchPertandingan } from "../api/turnament/pertandingan/pertandingan";
 import type { Pertandingan } from "../types/pertandingan";
+import CustomLoading from "./custom/CustomLoading";
 
 type CompetitionKey =
     | "Semua"
@@ -105,9 +105,8 @@ const Dashboard: React.FC = () => {
      * DOCUMENT TITLE
      */
     useEffect(() => {
-        document.title = `${t("turnamentTitle")}${
-            pageTitle ? ` | ${pageTitle}` : ""
-        }`;
+        document.title = `${t("turnamentTitle")}${pageTitle ? ` | ${pageTitle}` : ""
+            }`;
     }, [pageTitle, t]);
 
     /*
@@ -147,7 +146,9 @@ const Dashboard: React.FC = () => {
                 setError(t("getMatchError"));
                 setPertandingan([]);
             } finally {
-                setLoading(false);
+                setTimeout(() => {
+                    setLoading(false);
+                }, 4000);
             }
         };
 
@@ -294,11 +295,9 @@ const Dashboard: React.FC = () => {
                 .map((item, index) => ({
                     no: index + 1,
 
-                    name: `${item.peserta1_name} ${
-                        t("vs")
-                    } ${
-                        item.peserta2_name ?? t("bye")
-                    }`,
+                    name: `${item.peserta1_name} ${t("vs")
+                        } ${item.peserta2_name ?? t("bye")
+                        }`,
 
                     juri: item.juri ?? [],
                 }));
@@ -384,24 +383,6 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    /*
-     * LOADING
-     */
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -450,6 +431,7 @@ const Dashboard: React.FC = () => {
                 }}
             >
                 {/* HEADER */}
+                {loading && <CustomLoading />}
                 <Box
                     sx={{
                         display: "flex",
@@ -613,14 +595,14 @@ const Dashboard: React.FC = () => {
                         sx={{
                             width: {
                                 xs: "100%",
-                                md: "54.5%",
+                                md: "40.5%",
                             },
                         }}
                     >
                         <TotalCompetitionApril
                             totalCompetitionApril={
                                 stats.totalCompetition[
-                                    competition
+                                competition
                                 ]
                             }
                         />
@@ -631,7 +613,7 @@ const Dashboard: React.FC = () => {
                         sx={{
                             width: {
                                 xs: "100%",
-                                md: "37.8%",
+                                md: "51.8%",
                             },
                         }}
                     >

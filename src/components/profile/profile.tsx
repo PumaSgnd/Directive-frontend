@@ -42,6 +42,7 @@ import UserMenu from "../header/UserMenu";
 import { useStore } from "../../hooks/useStore";
 import { useProfile } from "../../hooks/useProfile";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../custom/CustomLoading";
 
 const BACKEND_URL = "http://localhost:5000";
 
@@ -590,22 +591,6 @@ const Profile = () => {
         }
     };
 
-    if (
-        loading &&
-        !profile
-    ) {
-        return (
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                minHeight="100vh"
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -616,6 +601,7 @@ const Profile = () => {
                 overflowX: "hidden",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     width: drawerWidth,

@@ -32,6 +32,7 @@ import PaginationActions from "../../custom/PaginationActions";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import { capitalizeWords, formatEmail } from "../../../utils/format";
 import { useTranslation } from "react-i18next";
+import CustomLoading from "../../custom/CustomLoading";
 
 type SortByType = "default" | "name" | "username" | "email" | "role";
 
@@ -154,21 +155,6 @@ export default function UserManagement() {
         setPage(0);
     }, [search, sortBy, sortOrder]);
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box
             sx={{
@@ -177,6 +163,7 @@ export default function UserManagement() {
                 minHeight: "100vh",
             }}
         >
+            {loading && <CustomLoading />}
             <Box
                 sx={{
                     position: "fixed",

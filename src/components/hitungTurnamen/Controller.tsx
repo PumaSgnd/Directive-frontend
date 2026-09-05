@@ -265,13 +265,13 @@ const ControllerMatch = () => {
         timeLeft,
         formattedTime,
         running,
-
         setTimer,
         startTimer,
         stopTimer,
         syncTimer,
     } = usePertandinganTimer({
         pertandinganId,
+        isController: true,
         autoSync: true,
         onTimeUp: handleTimeUp,
     });
@@ -392,6 +392,7 @@ const ControllerMatch = () => {
         juriId: number,
         pesertaId: number | null | undefined
     ) => {
+
         if (!pesertaId) {
             return 0;
         }
@@ -399,8 +400,14 @@ const ControllerMatch = () => {
         const found =
             scorePerJuri.find(
                 (score) =>
-                    score.juri_id === juriId &&
-                    score.peserta_id === pesertaId
+                    Number(score.juri_id) ===
+                    Number(juriId) &&
+
+                    Number(score.peserta_id) ===
+                    Number(pesertaId) &&
+
+                    Number(score.ronde) ===
+                    Number(rondeAktif)
             );
 
         return found
@@ -419,6 +426,18 @@ const ControllerMatch = () => {
             (juri) =>
                 juri.id === myJuriId
         )?.total ?? 0;
+
+    const durasiRondeDetik =
+        Number(activePertandingan?.durasi_ronde_menit ?? 2) * 60;
+
+    const formatDurasiRonde = (seconds: number) => {
+        const minutes = Math.floor(seconds / 60);
+        const secondsRemaining = seconds % 60;
+
+        return `${String(minutes).padStart(2, "0")}:${String(
+            secondsRemaining
+        ).padStart(2, "0")}`;
+    };
 
     const handleStart = async () => {
         try {
@@ -1345,7 +1364,9 @@ const ControllerMatch = () => {
                                             }}
                                         >
                                             {isNewRound
-                                                ? `Mulai Ronde ${rondeAktif} • ${formattedTime}`
+                                                ? `Mulai Ronde ${rondeAktif + 1} • ${formatDurasiRonde(
+                                                    durasiRondeDetik
+                                                )}`
                                                 : formattedTime}
                                         </Button>
                                     ) : (

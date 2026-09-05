@@ -61,6 +61,7 @@ export default function Login() {
                         placeholder="Your Account"
                         margin="normal"
                         value={usernameOrEmail}
+                        autoComplete="username"
                         onChange={(e) => setUsernameOrEmail(e.target.value)}
                     />
                     <TextField
@@ -70,6 +71,7 @@ export default function Login() {
                         margin="normal"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="current-password"
                         InputProps={{ endAdornment: passwordVisibilityIcon }}
                     />
                     <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>

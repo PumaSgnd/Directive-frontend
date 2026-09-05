@@ -15,13 +15,15 @@ import {
 
 interface UsePertandinganTimerOptions {
     pertandinganId: number;
+    isController?: boolean;
     autoSync?: boolean;
     onTimeUp?: () => void;
 }
 
 export const usePertandinganTimer = ({
     pertandinganId,
-    autoSync = true,
+    isController = false,
+    autoSync = false,
     onTimeUp,
 }: UsePertandinganTimerOptions) => {
 
@@ -30,31 +32,23 @@ export const usePertandinganTimer = ({
         updateActivePertandingan,
     } = usePertandinganStore();
 
-    const initialTime =
-        activePertandingan?.sisa_detik ?? 0;
-
     const [timeLeft, setTimeLeft] =
-        useState(initialTime);
+        useState(0);
 
     const [running, setRunning] =
-        useState(
-            activePertandingan?.status ===
-                "berlangsung"
-        );
+        useState(false);
 
     const timeRef =
-        useRef(initialTime);
+        useRef(0);
 
     const previousRoundRef =
-        useRef<number | null>(
-            activePertandingan?.ronde_aktif ??
-                null
-        );
+        useRef<number | null>(null);
 
     const previousStatusRef =
-        useRef(
-            activePertandingan?.status
-        );
+        useRef<string | null>(null);
+
+    const timeUpTriggeredRef =
+        useRef(false);
 
     useEffect(() => {
         timeRef.current = timeLeft;
@@ -72,49 +66,86 @@ export const usePertandinganTimer = ({
         const currentStatus =
             activePertandingan.status;
 
+        const serverTime =
+            activePertandingan.sisa_detik ?? 0;
+
         const previousRound =
             previousRoundRef.current;
 
         const previousStatus =
             previousStatusRef.current;
 
-        if (
-            previousRound !== null &&
+        if (previousRound === null) {
+
+            setTimeLeft(serverTime);
+
+            timeRef.current =
+                serverTime;
+
+            setRunning(
+                isController &&
+                currentStatus === "berlangsung"
+            );
+
+            timeUpTriggeredRef.current =
+                serverTime <= 0;
+
+        } else if (
             currentRound !== previousRound
         ) {
-            const newTime =
-                activePertandingan.sisa_detik ?? 0;
 
-            setTimeLeft(newTime);
+            setTimeLeft(serverTime);
 
-            timeRef.current = newTime;
+            timeRef.current =
+                serverTime;
 
-            setRunning(false);
-        }
+            setRunning(
+                isController &&
+                currentStatus === "berlangsung"
+            );
 
-        else if (
-            currentStatus === "pause" &&
-            previousStatus !== "pause"
+            timeUpTriggeredRef.current =
+                serverTime <= 0;
+
+        } else if (
+            currentStatus === "pause"
         ) {
-            const newTime =
-                activePertandingan.sisa_detik ?? 0;
 
-            setTimeLeft(newTime);
+            setTimeLeft(serverTime);
 
-            timeRef.current = newTime;
+            timeRef.current =
+                serverTime;
 
             setRunning(false);
-        }
 
-        else if (
+            timeUpTriggeredRef.current =
+                serverTime <= 0;
+
+        } else if (
             currentStatus === "berlangsung"
         ) {
-            setRunning(true);
-        }
 
-        else if (
+            if (
+                isController &&
+                !running
+            ) {
+
+                setTimeLeft(serverTime);
+
+                timeRef.current =
+                    serverTime;
+
+                setRunning(true);
+            }
+
+        } else if (
             currentStatus === "selesai"
         ) {
+
+            setTimeLeft(0);
+
+            timeRef.current = 0;
+
             setRunning(false);
         }
 
@@ -129,11 +160,16 @@ export const usePertandinganTimer = ({
         activePertandingan?.ronde_aktif,
         activePertandingan?.status,
         activePertandingan?.sisa_detik,
+        isController,
+        running,
     ]);
 
     useEffect(() => {
 
-        if (!running) {
+        if (
+            !isController ||
+            !running
+        ) {
             return;
         }
 
@@ -152,7 +188,15 @@ export const usePertandinganTimer = ({
 
                         setRunning(false);
 
-                        onTimeUp?.();
+                        if (
+                            !timeUpTriggeredRef.current
+                        ) {
+
+                            timeUpTriggeredRef.current =
+                                true;
+
+                            onTimeUp?.();
+                        }
 
                         return 0;
                     }
@@ -169,12 +213,11 @@ export const usePertandinganTimer = ({
             }, 1000);
 
         return () => {
-            window.clearInterval(
-                interval
-            );
+            window.clearInterval(interval);
         };
 
     }, [
+        isController,
         running,
         onTimeUp,
     ]);
@@ -182,6 +225,17 @@ export const usePertandinganTimer = ({
     const syncTimer =
         useCallback(
             async (value?: number) => {
+
+                if (!isController) {
+                    return null;
+                }
+
+                if (
+                    activePertandingan?.status !==
+                    "berlangsung"
+                ) {
+                    return null;
+                }
 
                 const seconds =
                     value ??
@@ -191,19 +245,23 @@ export const usePertandinganTimer = ({
                     await updateTimerApi(
                         pertandinganId,
                         {
-                            sisa_detik:
-                                seconds,
+                            sisa_detik: seconds,
                         }
                     );
 
-                updateActivePertandingan(
-                    result
-                );
+                if (result) {
+                    updateActivePertandingan(
+                        result
+                    );
+                }
 
                 return result;
+
             },
             [
                 pertandinganId,
+                isController,
+                activePertandingan?.status,
                 updateActivePertandingan,
             ]
         );
@@ -212,17 +270,27 @@ export const usePertandinganTimer = ({
         useCallback(
             (seconds: number) => {
 
+                const safeSeconds =
+                    Math.max(
+                        0,
+                        Math.min(
+                            180,
+                            Math.floor(seconds)
+                        )
+                    );
+
                 setTimeLeft(
-                    seconds
+                    safeSeconds
                 );
 
                 timeRef.current =
-                    seconds;
+                    safeSeconds;
 
                 updateActivePertandingan({
                     sisa_detik:
-                        seconds,
+                        safeSeconds,
                 });
+
             },
             [
                 updateActivePertandingan,
@@ -232,9 +300,18 @@ export const usePertandinganTimer = ({
     const startTimer =
         useCallback(() => {
 
+            if (!isController) {
+                return;
+            }
+
+            timeUpTriggeredRef.current =
+                false;
+
             setRunning(true);
 
-        }, []);
+        }, [
+            isController,
+        ]);
 
     const stopTimer =
         useCallback(() => {
@@ -246,6 +323,7 @@ export const usePertandinganTimer = ({
     useEffect(() => {
 
         if (
+            !isController ||
             !autoSync ||
             !running
         ) {
@@ -256,7 +334,7 @@ export const usePertandinganTimer = ({
             window.setInterval(() => {
 
                 syncTimer()
-                    .catch(console.error);
+                    .catch(() => {});
 
             }, 5000);
 
@@ -269,6 +347,7 @@ export const usePertandinganTimer = ({
         };
 
     }, [
+        isController,
         autoSync,
         running,
         syncTimer,
@@ -287,11 +366,9 @@ export const usePertandinganTimer = ({
         timeLeft,
         formattedTime,
         running,
-
         setTimer,
         startTimer,
         stopTimer,
-
         syncTimer,
     };
 };
